@@ -3,7 +3,7 @@
 //   copie en cache pour ouvrir l'app hors-ligne.
 // • SDK Firebase (URLs versionnées) et icônes : cache d'abord (économie de data 2G/3G).
 // • Les échanges temps réel avec Firebase ne sont jamais interceptés.
-const CACHE = "kuma-v3";
+const CACHE = "kuma-v4";
 const CORE = ["./", "./index.html", "./manifest.json", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
