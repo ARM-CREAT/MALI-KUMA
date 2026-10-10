@@ -1,0 +1,62 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "chats",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "members", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "lastMessageAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "calls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "participants", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "startedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "calls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "calleeId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "calls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "chatMembers", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "calls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "chatMembers", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "chatId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "statuses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "audience", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "expiresAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "statuses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "expiresAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
