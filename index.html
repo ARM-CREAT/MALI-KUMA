@@ -1,0 +1,2244 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KUMA</title>
+<meta name="description" content="KUMA — messagerie et appels en temps réel">
+<meta name="theme-color" content="#075E54">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="KUMA">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+:root {
+  --kuma-green: #075E54;
+  --kuma-green-light: #128C7E;
+  --kuma-accent: #25D366;
+  --kuma-chat-bg: #efeae2;
+  --kuma-bubble-out: #d9fdd3;
+  --kuma-bubble-in: #ffffff;
+  --kuma-text: #111b21;
+  --kuma-muted: #667781;
+  --kuma-line: #e9edef;
+  --danger: #e53935;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; padding: 0; height: 100%;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #d1d7db; color: var(--kuma-text); overscroll-behavior: none;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+img { max-width: 100%; }
+.hidden { display: none !important; }
+.muted { color: var(--kuma-muted); font-size: 13px; }
+.ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+#app {
+  display: flex; flex-direction: column; height: 100vh; height: 100dvh;
+  max-width: 520px; margin: 0 auto; background: #fff; position: relative; overflow: hidden;
+  box-shadow: 0 0 24px rgba(0,0,0,.12);
+}
+.icon-btn { background: none; border: none; font-size: 20px; padding: 7px; line-height: 1; border-radius: 50%; }
+.icon-btn:active { background: rgba(0,0,0,.08); }
+
+.avatar {
+  width: 50px; height: 50px; border-radius: 50%; flex-shrink: 0; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 700; font-size: 18px; user-select: none;
+}
+
+/* ---------- Authentification ---------- */
+.auth-screen {
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  height: 100%; padding: 28px; background: var(--kuma-green); color: #fff; text-align: center; overflow-y: auto;
+}
+.auth-logo { width: 84px; height: 84px; border-radius: 22px; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+.auth-screen h1 { font-size: 40px; margin: 12px 0 4px; letter-spacing: 2px; }
+.auth-screen .tagline { opacity: .88; margin: 0 0 22px; }
+.auth-screen input {
+  width: 100%; padding: 14px; border-radius: 10px; border: none; margin-bottom: 12px; font-size: 16px;
+}
+.auth-screen .primary {
+  width: 100%; padding: 14px; border-radius: 10px; border: none; background: var(--kuma-accent);
+  color: #063; font-weight: 700; font-size: 16px; margin-top: 4px;
+}
+.auth-screen .primary:disabled { opacity: .6; }
+.lang-select { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
+.lang-select button {
+  padding: 6px 12px; border-radius: 16px; border: 1px solid rgba(255,255,255,.5);
+  background: transparent; color: #fff; font-size: 13px;
+}
+.lang-select button.active { background: #fff; color: var(--kuma-green); border-color: #fff; }
+.link-btn { display: block; margin: 12px auto 0; background: none; border: none; color: #fff; text-decoration: underline; font-size: 14px; opacity: .9; }
+.link-btn:disabled { opacity: .5; text-decoration: none; cursor: default; }
+.config-warning { background: #fff3cd; color: #664d03; border-radius: 10px; padding: 10px 12px; font-size: 13px; margin-bottom: 16px; text-align: left; }
+.code-info { font-size: 14px; opacity: .9; margin: 0 0 12px; }
+#step-phone, #step-code { width: 100%; max-width: 360px; }
+
+/* ---------- Application ---------- */
+#mainApp { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.top-bar {
+  background: var(--kuma-green); color: #fff; padding: 10px 8px 10px 16px;
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.top-bar h2 { margin: 0; font-size: 21px; font-weight: 700; letter-spacing: 1px; }
+.top-bar .icon-btn { color: #fff; }
+.search-row { padding: 8px 12px; background: #fff; border-bottom: 1px solid var(--kuma-line); flex-shrink: 0; }
+.search-row input { width: 100%; padding: 10px 14px; border-radius: 20px; border: none; background: #f0f2f5; font-size: 15px; outline: none; }
+.tabs { display: flex; background: var(--kuma-green); flex-shrink: 0; }
+.tabs button {
+  flex: 1; background: none; border: none; color: rgba(255,255,255,.72);
+  padding: 12px 0; font-size: 13.5px; font-weight: 600; border-bottom: 3px solid transparent;
+}
+.tabs button.active { color: #fff; border-bottom-color: #fff; }
+.tab-badge { display: inline-block; background: #fff; color: var(--kuma-green); border-radius: 10px; font-size: 11px; padding: 0 6px; margin-left: 4px; }
+.tab-panel { flex: 1; min-height: 0; overflow-y: auto; position: relative; }
+#panel-chats { display: flex; flex-direction: column; overflow: hidden; }
+#chatsList { flex: 1; overflow-y: auto; padding-bottom: 90px; }
+.filters { display: flex; gap: 8px; padding: 10px 12px; overflow-x: auto; flex-shrink: 0; border-bottom: 1px solid var(--kuma-line); }
+.filters button { padding: 6px 14px; border-radius: 16px; border: none; background: #f0f2f5; color: var(--kuma-muted); font-size: 13.5px; white-space: nowrap; }
+.filters button.active { background: #d9fdd3; color: #008069; font-weight: 600; }
+
+.chat-item { display: flex; align-items: center; padding: 10px 14px; gap: 12px; cursor: pointer; }
+.chat-item:active { background: #f5f6f6; }
+.chat-item .meta { flex: 1; min-width: 0; border-bottom: 1px solid var(--kuma-line); padding-bottom: 10px; }
+.chat-item .row1, .chat-item .row2 { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.chat-item .name { font-weight: 600; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-item .time { font-size: 12px; color: var(--kuma-muted); flex-shrink: 0; }
+.chat-item .time.unread { color: var(--kuma-accent); font-weight: 600; }
+.chat-item .last-msg { font-size: 14px; color: var(--kuma-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; margin-top: 2px; }
+.chat-item .last-msg.typing, .chat-header .status.typing { color: var(--kuma-accent); font-style: italic; }
+.chat-header .status.typing { color: #c8f7d4; }
+.row2-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.badge { background: var(--kuma-accent); color: #fff; font-size: 11.5px; font-weight: 700; border-radius: 10px; padding: 1px 7px; min-width: 20px; text-align: center; }
+.fav { color: #f4b400; font-size: 14px; }
+.avatar-wrap { position: relative; flex-shrink: 0; }
+.online-dot { position: absolute; right: 1px; bottom: 1px; width: 13px; height: 13px; background: var(--kuma-accent); border: 2px solid #fff; border-radius: 50%; }
+.empty-state { text-align: center; color: var(--kuma-muted); padding: 60px 24px; font-size: 14px; line-height: 1.5; }
+.fab {
+  position: absolute; right: 18px; bottom: calc(20px + env(safe-area-inset-bottom)); width: 56px; height: 56px; border-radius: 16px;
+  background: var(--kuma-accent); color: #fff; border: none; font-size: 24px; box-shadow: 0 3px 10px rgba(0,0,0,.25);
+  display: flex; align-items: center; justify-content: center; z-index: 5;
+}
+.section-label { padding: 12px 16px 6px; font-size: 13px; color: var(--kuma-muted); font-weight: 600; }
+
+/* ---------- Conversation ---------- */
+.chat-screen { position: absolute; inset: 0; background: var(--kuma-chat-bg); display: flex; flex-direction: column; z-index: 20; }
+.chat-header { background: var(--kuma-green); color: #fff; padding: 8px 6px; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.chat-header .icon-btn { color: #fff; }
+.chat-header .info { flex: 1; min-width: 0; display: flex; flex-direction: column; cursor: pointer; padding-left: 4px; }
+.chat-header .info .name { font-weight: 600; font-size: 16.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-header .info .status { font-size: 12.5px; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 15px; }
+.banner { background: #fff; padding: 9px 14px; font-size: 13.5px; border-bottom: 1px solid var(--kuma-line); display: flex; gap: 8px; align-items: center; cursor: pointer; flex-shrink: 0; }
+.banner.call { background: #d9fdd3; color: #075E54; font-weight: 600; }
+.banner span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.messages { flex: 1; overflow-y: auto; padding: 8px 12px 10px; display: flex; flex-direction: column; gap: 3px; }
+.day-sep { align-self: center; background: #fff; color: var(--kuma-muted); font-size: 12.5px; padding: 5px 12px; border-radius: 8px; margin: 10px 0 6px; box-shadow: 0 1px .5px rgba(0,0,0,.12); }
+.msg {
+  max-width: 82%; padding: 6px 8px 4px 9px; border-radius: 8px; font-size: 14.8px; line-height: 1.38;
+  overflow-wrap: anywhere; box-shadow: 0 1px .5px rgba(0,0,0,.13); cursor: pointer; position: relative;
+}
+.msg.first { margin-top: 5px; }
+.msg.out { align-self: flex-end; background: var(--kuma-bubble-out); }
+.msg.in { align-self: flex-start; background: var(--kuma-bubble-in); }
+.msg.out.first { border-top-right-radius: 2px; }
+.msg.in.first { border-top-left-radius: 2px; }
+.msg .text { white-space: pre-wrap; }
+.msg .text a { color: #027eb5; }
+.msg .sender { font-size: 12.8px; font-weight: 600; margin-bottom: 2px; }
+.msg .fwd { font-size: 12px; color: var(--kuma-muted); font-style: italic; margin-bottom: 2px; }
+.msg .quote { border-left: 4px solid var(--kuma-green-light); padding: 4px 8px; margin: 0 0 4px; background: rgba(0,0,0,.05); border-radius: 5px; font-size: 13px; }
+.msg .quote .q-name { font-weight: 600; color: var(--kuma-green-light); }
+.msg .quote .q-text { color: var(--kuma-muted); max-height: 3.3em; overflow: hidden; }
+.msg img.photo { display: block; border-radius: 6px; max-width: 250px; max-height: 330px; width: 100%; object-fit: cover; margin-bottom: 3px; background: #ddd; min-height: 80px; }
+.msg .voice { display: flex; align-items: center; gap: 6px; }
+.msg audio { width: 220px; max-width: 62vw; height: 40px; }
+.msg .deleted { color: var(--kuma-muted); font-style: italic; }
+.msg .reacts { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 3px; }
+.msg .reacts span { background: #fff; border-radius: 10px; padding: 0 6px; font-size: 12.5px; box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+.msg .meta { display: block; text-align: right; font-size: 11px; color: var(--kuma-muted); margin-top: 1px; white-space: nowrap; }
+.msg .edited { font-style: italic; }
+.ticks { letter-spacing: -3px; margin-left: 2px; }
+.ticks.read { color: #53bdeb; }
+.msg.highlight { animation: flash 1.4s; }
+@keyframes flash { 0%, 100% { filter: none; } 25% { filter: brightness(.82); } }
+
+.context-bar { display: flex; align-items: center; gap: 8px; background: #f0f2f5; padding: 8px 10px 0; flex-shrink: 0; }
+.context-bar .cb-body { flex: 1; min-width: 0; background: #fff; border-left: 4px solid var(--kuma-green-light); border-radius: 6px; padding: 6px 10px; }
+.context-bar .cb-title { font-weight: 600; color: var(--kuma-green-light); font-size: 13px; }
+.context-bar .cb-text { font-size: 13px; color: var(--kuma-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.blocked-bar { background: #f0f2f5; padding: 14px; text-align: center; font-size: 14px; color: var(--kuma-muted); flex-shrink: 0; }
+.blocked-bar button { background: none; border: none; color: #008069; font-weight: 600; }
+.composer { display: flex; align-items: flex-end; gap: 6px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); background: #f0f2f5; flex-shrink: 0; }
+.input-wrap { flex: 1; display: flex; align-items: center; background: #fff; border-radius: 24px; padding: 0 4px; min-height: 46px; min-width: 0; }
+.input-wrap input[type=text] { flex: 1; border: none; outline: none; padding: 11px 6px; font-size: 16px; background: transparent; min-width: 0; }
+.input-wrap .icon-btn { color: var(--kuma-muted); font-size: 19px; }
+.round-btn { width: 46px; height: 46px; border-radius: 50%; border: none; background: var(--kuma-green-light); color: #fff; font-size: 19px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.round-btn.recording { background: var(--kuma-accent); }
+.rec-bar { flex: 1; display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 24px; padding: 0 14px; min-height: 46px; color: var(--danger); font-weight: 600; }
+.rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: .15; } }
+.rec-bar .cancel { margin-left: auto; color: var(--kuma-muted); background: none; border: none; font-size: 14px; font-weight: 500; }
+
+/* ---------- Actus (statuts) ---------- */
+.status-row { display: flex; align-items: center; gap: 12px; padding: 10px 16px; cursor: pointer; }
+.status-row:active { background: #f5f6f6; }
+.status-ring { border-radius: 50%; padding: 2px; border: 2.5px solid var(--kuma-accent); flex-shrink: 0; }
+.status-ring.seen { border-color: #c5ccd0; }
+.status-ring.mine { border-color: transparent; position: relative; }
+.status-ring.mine .plus { position: absolute; right: -2px; bottom: -2px; width: 20px; height: 20px; border-radius: 50%; background: var(--kuma-accent); color: #fff; border: 2px solid #fff; font-size: 14px; line-height: 15px; text-align: center; font-weight: 700; }
+.status-text-card { color: #fff; font-size: 23px; text-align: center; padding: 40px 22px; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; width: 100%; min-height: 50vh; display: flex; align-items: center; justify-content: center; }
+.color-choices { display: flex; gap: 8px; margin: 4px 0 12px; flex-wrap: wrap; }
+.color-choices button { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; }
+.color-choices button.sel { box-shadow: 0 0 0 3px var(--kuma-green); }
+
+/* ---------- Appels ---------- */
+#callsTabContent { padding-bottom: 90px; }
+.call-item { display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; }
+.call-item .name { font-weight: 600; font-size: 16px; }
+.call-item .name.missed, .call-item .sub.missed { color: var(--danger); }
+.call-item .sub { font-size: 13px; color: var(--kuma-muted); margin-top: 2px; }
+.call-item .call-again { color: var(--kuma-green-light); font-size: 21px; }
+
+.call-screen {
+  position: absolute; inset: 0; background: #0b141a; color: #fff; z-index: 30;
+  display: flex; flex-direction: column; align-items: center; padding: 18px 14px calc(22px + env(safe-area-inset-bottom));
+}
+.call-top { text-align: center; margin-top: 10px; z-index: 4; display: flex; flex-direction: column; align-items: center; }
+.call-top h2 { margin: 10px 0 4px; font-weight: 500; font-size: 22px; }
+.call-top .call-status { opacity: .85; font-size: 14.5px; }
+.call-screen.video .call-top { position: absolute; top: 18px; left: 0; right: 0; text-shadow: 0 1px 4px rgba(0,0,0,.7); }
+.call-screen.video .call-top h2 { margin-top: 0; }
+.call-stage { flex: 1; width: 100%; position: relative; margin: 14px 0; min-height: 0; }
+.call-screen.video .call-stage { margin-top: 0; }
+#remoteVideo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 14px; background: #000; }
+#localVideo { position: absolute; bottom: 12px; right: 12px; width: 96px; height: 136px; object-fit: cover; border-radius: 10px; border: 2px solid rgba(255,255,255,.85); z-index: 3; background: #222; transform: scaleX(-1); }
+.call-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: minmax(150px, 1fr); gap: 8px; overflow-y: auto; }
+.call-tile { position: relative; background: #1f2c34; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.call-tile video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.call-tile .label { position: absolute; left: 8px; bottom: 6px; font-size: 12.5px; background: rgba(0,0,0,.55); padding: 2px 7px; border-radius: 5px; z-index: 2; }
+.call-controls { display: flex; gap: 20px; justify-content: center; }
+.call-controls button { width: 60px; height: 60px; border-radius: 50%; border: none; background: rgba(255,255,255,.16); color: #fff; font-size: 23px; }
+.call-controls button.off { background: #fff; color: #0b141a; }
+.call-controls button.end { background: var(--danger); }
+
+.incoming {
+  position: absolute; inset: 0; z-index: 45; background: linear-gradient(#075E54, #0b141a); color: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 70px 20px calc(60px + env(safe-area-inset-bottom)); text-align: center;
+}
+.incoming .kind { opacity: .85; font-size: 15px; }
+.incoming .avatar { margin: 26px auto 12px; animation: pulse 1.6s infinite; }
+.incoming h2 { margin: 0; font-weight: 500; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(37,211,102,.6); } 70% { box-shadow: 0 0 0 24px rgba(37,211,102,0); } 100% { box-shadow: 0 0 0 0 rgba(37,211,102,0); } }
+.incoming .btns { display: flex; gap: 70px; }
+.incoming .btns button { width: 68px; height: 68px; border-radius: 50%; border: none; font-size: 26px; color: #fff; }
+.incoming .btns .accept { background: var(--kuma-accent); }
+.incoming .btns .decline { background: var(--danger); }
+.incoming .btns small { display: block; margin-top: 8px; font-size: 13px; }
+
+/* ---------- Visionneuse (photos / Actus) ---------- */
+.viewer { position: absolute; inset: 0; z-index: 50; background: #000; display: flex; align-items: center; justify-content: center; color: #fff; }
+.viewer > .close { position: absolute; top: 10px; right: 10px; color: #fff; z-index: 6; font-size: 24px; }
+#viewerBody { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+#viewerBody > img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.sv { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; }
+.sv-bars { display: flex; gap: 4px; padding: 10px 10px 0; z-index: 4; }
+.sv-bar { flex: 1; height: 3px; background: rgba(255,255,255,.35); border-radius: 2px; overflow: hidden; }
+.sv-fill { height: 100%; width: 0; background: #fff; }
+.sv-head { display: flex; align-items: center; gap: 10px; padding: 10px 50px 10px 12px; z-index: 4; }
+.sv-head .when { font-size: 12.5px; opacity: .8; }
+.sv-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; padding: 0 10px; }
+.sv-content img { max-width: 100%; max-height: 75vh; object-fit: contain; }
+.sv-caption { margin-top: 10px; text-align: center; font-size: 16px; white-space: pre-wrap; }
+.sv-nav { position: absolute; inset: 90px 0 70px 0; display: flex; z-index: 3; }
+.sv-nav div { flex: 1; }
+.sv-foot { position: relative; z-index: 5; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); font-size: 14px; }
+.sv-foot button { background: rgba(255,255,255,.15); color: #fff; border: none; border-radius: 18px; padding: 7px 14px; }
+
+/* ---------- Feuilles modales ---------- */
+.modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; z-index: 40; }
+.modal-sheet {
+  background: #fff; width: 100%; border-radius: 18px 18px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+  max-height: 88%; overflow-y: auto; animation: up .18s ease-out;
+}
+@keyframes up { from { transform: translateY(30px); opacity: .5; } to { transform: none; opacity: 1; } }
+.modal-sheet h3 { margin: 0 0 12px; }
+.modal-sheet input[type=text], .modal-sheet input[type=tel], .modal-sheet textarea, .modal-sheet select {
+  width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #d0d7db; margin-bottom: 10px; font-size: 15px; font-family: inherit; background: #fff;
+}
+.btn { display: block; width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--kuma-green); color: #fff; font-weight: 600; margin-bottom: 8px; font-size: 15px; text-align: left; }
+.btn.center { text-align: center; }
+.btn.secondary { background: #f0f2f5; color: var(--kuma-text); }
+.btn.danger { background: #fdecea; color: var(--danger); }
+.btn.accent { background: var(--kuma-accent); color: #063; text-align: center; }
+.row-inline { display: flex; gap: 8px; align-items: stretch; }
+.row-inline input { margin-bottom: 0 !important; flex: 1; min-width: 0; }
+.row-inline .btn { width: auto; margin: 0; white-space: nowrap; text-align: center; }
+.list-row { display: flex; align-items: center; gap: 12px; padding: 9px 4px; cursor: pointer; border-radius: 10px; }
+.list-row:active { background: #f5f6f6; }
+.section-title { font-size: 12.5px; color: #008069; font-weight: 700; margin: 16px 0 6px; text-transform: uppercase; letter-spacing: .3px; }
+.react-row { display: flex; justify-content: space-around; margin-bottom: 12px; background: #f0f2f5; border-radius: 30px; padding: 6px; }
+.react-row button { font-size: 25px; background: none; border: none; padding: 4px 6px; border-radius: 50%; }
+.react-row button.mine { background: #d9fdd3; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--kuma-line); }
+.toggle-row input { width: 20px; height: 20px; flex-shrink: 0; }
+.toast {
+  position: absolute; bottom: 96px; left: 50%; transform: translateX(-50%);
+  background: rgba(32,32,32,.94); color: #fff; padding: 10px 16px; border-radius: 20px; font-size: 13.5px;
+  z-index: 70; max-width: 90%; text-align: center; line-height: 1.4;
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===================== AUTHENTIFICATION ===================== -->
+  <div id="authScreen" class="auth-screen">
+    <img class="auth-logo" src="icons/icon-192.png" alt="">
+    <h1>KUMA</h1>
+    <p class="tagline" id="authTagline">Discutez librement, où que vous soyez</p>
+    <div id="configWarning" class="config-warning hidden">
+      ⚠️ Firebase n'est pas encore configuré : remplacez les valeurs <b>REMPLACER</b> de <code>firebaseConfig</code> dans <code>index.html</code>.
+    </div>
+    <div class="lang-select">
+      <button data-lang="fr">Français</button>
+      <button data-lang="bm">Bamanankan</button>
+      <button data-lang="ff">Fulfulde</button>
+      <button data-lang="sn">Soninkanxanne</button>
+      <button data-lang="tm">Tamasheq</button>
+    </div>
+    <div id="step-phone">
+      <input type="tel" id="phoneInput" placeholder="+223 70 00 00 00" autocomplete="tel">
+      <input type="text" id="displayName" placeholder="Votre nom" autocomplete="name" maxlength="40">
+      <button class="primary" id="sendCodeBtn">Envoyer le code</button>
+      <div id="recaptcha-container"></div>
+    </div>
+    <div id="step-code" class="hidden">
+      <p class="code-info" id="codeSentTo"></p>
+      <input type="text" id="codeInput" placeholder="Code à 6 chiffres" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+      <button class="primary" id="verifyCodeBtn">Vérifier</button>
+      <button class="link-btn" id="resendBtn" disabled>Renvoyer le code</button>
+      <button class="link-btn" id="changeNumberBtn">Modifier le numéro</button>
+    </div>
+  </div>
+
+  <!-- ===================== APPLICATION PRINCIPALE ===================== -->
+  <div id="mainApp" class="hidden">
+    <div class="top-bar">
+      <h2>KUMA</h2>
+      <div>
+        <button class="icon-btn" id="searchBtn" aria-label="Rechercher">🔍</button>
+        <button class="icon-btn" id="menuBtn" aria-label="Menu">⋮</button>
+      </div>
+    </div>
+    <div class="search-row hidden" id="searchRow">
+      <input type="search" id="searchInput" placeholder="Rechercher une discussion…" autocomplete="off">
+    </div>
+    <div class="tabs">
+      <button data-tab="chats" class="active">Discussions<span id="unreadTabBadge" class="tab-badge hidden"></span></button>
+      <button data-tab="status">Actus</button>
+      <button data-tab="communities">Communautés</button>
+      <button data-tab="calls">Appels</button>
+    </div>
+
+    <div id="panel-chats" class="tab-panel">
+      <div class="filters">
+        <button class="active" data-filter="all">Toutes</button>
+        <button data-filter="unread">Non lues</button>
+        <button data-filter="favorites">Favoris</button>
+        <button data-filter="groups">Groupes</button>
+      </div>
+      <div id="chatsList"></div>
+      <button class="fab" id="fabNewChat" aria-label="Nouvelle discussion">💬</button>
+    </div>
+
+    <div id="panel-status" class="tab-panel hidden">
+      <div id="statusTabContent"></div>
+      <button class="fab" id="fabStatus" aria-label="Nouvelle actu">✏️</button>
+    </div>
+
+    <div id="panel-communities" class="tab-panel hidden">
+      <div class="empty-state">👥<br><b>Communautés</b><br>Bientôt disponible : regroupez plusieurs groupes autour d'une association, d'un village ou d'une entreprise.</div>
+    </div>
+
+    <div id="panel-calls" class="tab-panel hidden">
+      <div id="callsTabContent"></div>
+      <button class="fab" id="fabCall" aria-label="Nouvel appel">📞</button>
+    </div>
+  </div>
+
+  <!-- ===================== CONVERSATION ===================== -->
+  <div id="chatScreen" class="chat-screen hidden">
+    <div class="chat-header">
+      <button class="icon-btn" id="backBtn" aria-label="Retour">←</button>
+      <div id="chatHeaderAvatar"></div>
+      <div class="info" id="chatHeaderInfo">
+        <span class="name" id="chatHeaderName"></span>
+        <span class="status" id="chatHeaderStatus"></span>
+      </div>
+      <button class="icon-btn" id="videoCallBtn" aria-label="Appel vidéo">🎥</button>
+      <button class="icon-btn" id="voiceCallBtn" aria-label="Appel vocal">📞</button>
+      <button class="icon-btn" id="chatInfoBtn" aria-label="Infos de la discussion">⋮</button>
+    </div>
+    <div id="groupCallBanner" class="banner call hidden"></div>
+    <div id="pinnedBanner" class="banner hidden"></div>
+    <div class="messages" id="messagesList"></div>
+    <div id="contextBar" class="context-bar hidden"></div>
+    <div id="blockedBar" class="blocked-bar hidden">Vous avez bloqué ce contact. <button id="unblockBtn">Débloquer</button></div>
+    <div class="composer" id="composer">
+      <div class="input-wrap" id="inputWrap">
+        <button class="icon-btn" id="attachBtn" aria-label="Envoyer une photo">📎</button>
+        <input type="text" id="messageInput" placeholder="Message" autocomplete="off" enterkeyhint="send" maxlength="4000">
+      </div>
+      <div class="rec-bar hidden" id="recBar">
+        <span class="rec-dot"></span><span id="recTime">0:00</span>
+        <button class="cancel" id="recCancel">✕ Annuler</button>
+      </div>
+      <input type="file" id="imageInput" accept="image/*" class="hidden">
+      <button class="round-btn" id="actionBtn" aria-label="Enregistrer une note vocale">🎤</button>
+    </div>
+  </div>
+
+  <!-- ===================== APPEL EN COURS ===================== -->
+  <div id="callScreen" class="call-screen hidden">
+    <div class="call-top">
+      <div id="callAvatar"></div>
+      <h2 id="callPeerName"></h2>
+      <div class="call-status" id="callStatus"></div>
+    </div>
+    <div class="call-stage">
+      <video id="remoteVideo" autoplay playsinline class="hidden"></video>
+      <video id="localVideo" autoplay playsinline muted class="hidden"></video>
+      <div id="callGrid" class="call-grid hidden"></div>
+    </div>
+    <audio id="remoteAudio" autoplay></audio>
+    <div class="call-controls">
+      <button id="muteBtn" aria-label="Couper le micro">🎙️</button>
+      <button id="camBtn" aria-label="Couper la caméra">📷</button>
+      <button id="endCallBtn" class="end" aria-label="Raccrocher">📵</button>
+    </div>
+  </div>
+
+  <!-- ===================== APPEL ENTRANT ===================== -->
+  <div id="incomingScreen" class="incoming hidden">
+    <div>
+      <div class="kind" id="incomingKind">Appel vocal KUMA</div>
+      <div id="incomingAvatar"></div>
+      <h2 id="incomingName"></h2>
+    </div>
+    <div class="btns">
+      <div><button class="decline" id="declineBtn" aria-label="Refuser">✕</button><small>Refuser</small></div>
+      <div><button class="accept" id="acceptBtn" aria-label="Accepter">📞</button><small>Accepter</small></div>
+    </div>
+  </div>
+
+  <!-- ===================== VISIONNEUSE ===================== -->
+  <div id="viewer" class="viewer hidden">
+    <button class="icon-btn close" id="viewerClose" aria-label="Fermer">✕</button>
+    <div id="viewerBody"></div>
+  </div>
+
+  <!-- ===================== MODALES / TOAST ===================== -->
+  <div id="modalOverlay" class="modal-overlay hidden"><div class="modal-sheet" id="modalSheet"></div></div>
+  <div id="toast" class="toast hidden" role="status"></div>
+</div>
+
+<noscript>KUMA a besoin de JavaScript pour fonctionner.</noscript>
+
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+
+<script>
+// ============================================================
+// 1. CONFIGURATION — la seule partie à modifier
+// ============================================================
+// Créez un projet sur console.firebase.google.com, puis :
+//  • Authentication → Sign-in method → activer « Téléphone »
+//  • Authentication → Settings → Domaines autorisés → ajouter votre domaine Vercel
+//  • Firestore Database et Storage → créer
+//  • Paramètres du projet → Vos applications → Web → copier la config ici
+// Règles et index : voir README.md (firestore.rules, firestore.indexes.json, storage.rules)
+const firebaseConfig = {
+  apiKey: "REMPLACER_PAR_VOTRE_API_KEY",
+  authDomain: "REMPLACER.firebaseapp.com",
+  projectId: "REMPLACER",
+  storageBucket: "REMPLACER.appspot.com",
+  messagingSenderId: "REMPLACER",
+  appId: "REMPLACER"
+};
+
+// Serveurs pour les appels. Le STUN suffit sur un même réseau ; pour appeler
+// d'un réseau à l'autre (4G ↔ wifi, pays différents) il faut un serveur TURN
+// (ex. compte gratuit sur dashboard.metered.ca) : décommentez et remplissez.
+const RTC_CONFIG = {
+  iceServers: [
+    { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] },
+    // { urls: "turn:VOTRE_SERVEUR_TURN:443?transport=tcp", username: "…", credential: "…" },
+  ]
+};
+</script>
+
+<script>
+// ============================================================
+// 2. INITIALISATION + OUTILS
+// ============================================================
+const CONFIG_OK = !String(firebaseConfig.apiKey).startsWith("REMPLACER");
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+auth.languageCode = "fr";
+const db = firebase.firestore();
+const storage = firebase.storage();
+const FV = firebase.firestore.FieldValue;
+const TS = firebase.firestore.Timestamp;
+// Cache local : l'app s'ouvre hors-ligne et les messages envoyés sans réseau
+// partent automatiquement au retour de la connexion (affichés avec 🕓).
+db.enablePersistence({ synchronizeTabs: true }).catch(err => console.warn("Persistance hors-ligne indisponible :", err.code));
+
+const REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
+const STATUS_COLORS = ["#075E54", "#128C7E", "#5B2C83", "#C0392B", "#D35400", "#1F618D", "#2E4053", "#7D6608"];
+
+const $ = id => document.getElementById(id);
+const ESC = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, c => ESC[c]); }
+function firstName(n) { return String(n || "").trim().split(/\s+/)[0] || String(n || ""); }
+function initials(name) {
+  const parts = String(name || "?").trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  const a = Array.from(parts[0])[0] || "";
+  const b = parts.length > 1 ? (Array.from(parts[parts.length - 1])[0] || "") : "";
+  return (a + b).toUpperCase();
+}
+function hueOf(seed) { let h = 7; for (const ch of String(seed || "")) h = (h * 31 + ch.codePointAt(0)) % 360; return h; }
+function avatar(name, seed, size) {
+  let st = `background:hsl(${hueOf(seed || name)},42%,45%)`;
+  if (size) st += `;width:${size}px;height:${size}px;font-size:${Math.round(size * 0.36)}px`;
+  return `<div class="avatar" style="${st}">${esc(initials(name))}</div>`;
+}
+function nameColor(seed) { return `hsl(${hueOf(seed)},60%,36%)`; }
+function safeUrl(u) { return /^https:\/\//i.test(String(u || "")) ? String(u) : ""; }
+function safeColor(c) { return /^#[0-9a-f]{6}$/i.test(String(c || "")) ? c : STATUS_COLORS[0]; }
+function linkify(text) { return esc(text).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'); }
+function tsMillis(t) { if (!t) return 0; if (typeof t.toMillis === "function") return t.toMillis(); if (t instanceof Date) return t.getTime(); return 0; }
+function fmtTime(ms) { return new Date(ms).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }); }
+function fmtDuration(sec) { sec = Math.max(0, Math.round(sec || 0)); return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0"); }
+function dayStart(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
+function dayLabel(ms) {
+  const d = new Date(ms), diff = Math.round((dayStart(new Date()) - dayStart(d)) / 86400000);
+  if (diff === 0) return "Aujourd'hui";
+  if (diff === 1) return "Hier";
+  if (diff > 1 && diff < 7) { const w = d.toLocaleDateString("fr-FR", { weekday: "long" }); return w.charAt(0).toUpperCase() + w.slice(1); }
+  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+}
+function listTime(ms) {
+  if (!ms) return "";
+  const lbl = dayLabel(ms);
+  if (lbl === "Aujourd'hui") return fmtTime(ms);
+  if (lbl === "Hier") return "Hier";
+  if (Date.now() - ms < 7 * 86400000) return lbl;
+  return new Date(ms).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" });
+}
+function normalizePhone(p) { let s = String(p || "").replace(/[^\d+]/g, ""); if (s.startsWith("00")) s = "+" + s.slice(2); return s; }
+function validPhone(p) { return /^\+\d{8,15}$/.test(p); }
+
+function toast(msg, ms = 2800) {
+  const el = $("toast"); el.textContent = msg; el.classList.remove("hidden");
+  clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.add("hidden"), ms);
+}
+function hideToast() { clearTimeout(toast._t); $("toast").classList.add("hidden"); }
+
+function showModal(html) { const s = $("modalSheet"); s.innerHTML = html; $("modalOverlay").classList.remove("hidden"); s.scrollTop = 0; return s; }
+function closeModal() { $("modalOverlay").classList.add("hidden"); $("modalSheet").innerHTML = ""; }
+$("modalOverlay").addEventListener("click", e => { if (e.target === $("modalOverlay")) closeModal(); });
+function on(root, sel, fn) { const el = root.querySelector(sel); if (el) el.onclick = fn; return el; }
+
+let queryErrShown = false;
+function showQueryError(err) {
+  console.error(err);
+  if (queryErrShown || !err) return;
+  queryErrShown = true; setTimeout(() => queryErrShown = false, 30000);
+  if (err.code === "failed-precondition") toast("Index Firestore manquant : déployez firestore.indexes.json (voir README).", 8000);
+  else if (err.code === "permission-denied") toast("Accès refusé par Firestore : publiez firestore.rules (voir README).", 8000);
+}
+
+// Son : le navigateur n'autorise l'audio qu'après un premier geste de l'utilisateur.
+let audioCtx = null;
+function getAudioCtx() {
+  try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === "suspended") audioCtx.resume(); } catch (e) {}
+  return audioCtx;
+}
+document.addEventListener("pointerdown", getAudioCtx, { once: true });
+function beep(freq, at, len, vol) {
+  const ctx = getAudioCtx(); if (!ctx) return;
+  const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + at;
+  o.frequency.value = freq; o.connect(g); g.connect(ctx.destination);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  o.start(t); o.stop(t + len + 0.02);
+}
+let toneTimer = null;
+function startTone(kind) {
+  stopTone();
+  const play = kind === "ring" ? () => { beep(880, 0, 0.18, 0.25); beep(660, 0.25, 0.18, 0.25); } : () => beep(425, 0, 0.9, 0.08);
+  play(); toneTimer = setInterval(play, kind === "ring" ? 1800 : 3000);
+  if (kind === "ring" && navigator.vibrate) navigator.vibrate([500, 300, 500, 300, 500]);
+}
+function stopTone() { clearInterval(toneTimer); toneTimer = null; if (navigator.vibrate) navigator.vibrate(0); }
+
+function notify(title, body, tag) {
+  try {
+    if (document.visibilityState === "visible" || !("Notification" in window) || Notification.permission !== "granted") return;
+    const opts = { body, tag, icon: "icons/icon-192.png", badge: "icons/icon-192.png" };
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.ready.then(r => r.showNotification(title, opts));
+    else new Notification(title, opts);
+  } catch (e) {}
+}
+
+// ---------- État de session ----------
+let currentUser = null;
+let sessionUnsubs = [];
+const usersById = {};
+const userUnsubs = {};
+let allChats = [];
+let activeChatId = null, activeChat = null;
+
+function me() { return currentUser ? currentUser.uid : null; }
+function myProfile() { return (currentUser && usersById[currentUser.uid]) || {}; }
+function myName() { return myProfile().name || (currentUser && (currentUser.displayName || currentUser.phoneNumber)) || "Moi"; }
+function userName(uid, fallback) { const u = usersById[uid]; return (u && u.name) || fallback || (u && u.phone) || "Contact"; }
+function isOnline(u) { return !!(u && u.online && Date.now() - tsMillis(u.lastSeen) < 150000); }
+function isBlockedPair(a, b) {
+  const ua = usersById[a], ub = usersById[b];
+  return !!((ua && (ua.blockedUsers || []).includes(b)) || (ub && (ub.blockedUsers || []).includes(a)));
+}
+function track(unsub) { sessionUnsubs.push(unsub); return unsub; }
+
+// Présence « en ligne » : chaque utilisateur suivi l'est par un listener sur
+// son propre document (pas de lecture de toute la collection → passe à l'échelle).
+function watchUser(uid) {
+  if (!uid || userUnsubs[uid] || !currentUser) return;
+  userUnsubs[uid] = db.collection("users").doc(uid).onSnapshot(s => {
+    if (s.exists) usersById[uid] = s.data({ serverTimestamps: "estimate" });
+    scheduleRefresh();
+  }, () => {});
+}
+let refreshQueued = false;
+function scheduleRefresh() {
+  if (refreshQueued) return; refreshQueued = true;
+  setTimeout(() => {
+    refreshQueued = false;
+    renderChatsList();
+    if (activeChat) { updateChatHeader(); renderMessages(); }
+    renderStatusTab(); renderCallsTab();
+  }, 80);
+}
+
+function setPresence(online) {
+  if (!currentUser) return Promise.resolve();
+  return db.collection("users").doc(currentUser.uid).set({ online, lastSeen: FV.serverTimestamp() }, { merge: true }).catch(() => {});
+}
+setInterval(() => { if (currentUser && document.visibilityState === "visible") setPresence(true); }, 60000);
+document.addEventListener("visibilitychange", () => {
+  const vis = document.visibilityState === "visible";
+  setPresence(vis);
+  if (vis && activeChat) markRead(activeChat);
+});
+window.addEventListener("pagehide", () => setPresence(false));
+
+function endSession() {
+  sessionUnsubs.forEach(f => { try { f(); } catch (e) {} });
+  sessionUnsubs = [];
+  Object.keys(userUnsubs).forEach(k => { try { userUnsubs[k](); } catch (e) {} delete userUnsubs[k]; });
+  Object.keys(usersById).forEach(k => delete usersById[k]);
+  if (C.active) hangUp();
+  if (activeChatId) closeChat();
+  allChats = []; callHistory = []; myStatuses = []; othersStatuses = [];
+  closeModal();
+}
+</script>
+
+<script>
+// ============================================================
+// 3. CONNEXION PAR NUMÉRO DE TÉLÉPHONE (OTP)
+// ============================================================
+let confirmationResult = null, resendTimer = null;
+let selectedLang = (() => { try { return localStorage.getItem("kuma_lang") || "fr"; } catch (e) { return "fr"; } })();
+const I18N = {
+  fr: { welcome: "Discutez librement, où que vous soyez", send: "Envoyer le code", verify: "Vérifier", name: "Votre nom" },
+  bm: { welcome: "Kuma hɔrɔnya la, yɔrɔ o yɔrɔ i bɛ", send: "Kodo ci", verify: "Lajɛ", name: "I tɔgɔ" },
+  ff: { welcome: "Wowlu hino, e nokku fof", send: "Neldu kod", verify: "Ƴeewndo", name: "Innde maa" },
+  sn: { welcome: "Kaaya diina, yi kaŋ", send: "Kod moxu", verify: "Xayma", name: "I tuurax" },
+  tm: { welcome: "Iwal daɣ tenaɣt", send: "Azn awal", verify: "Sasat", name: "Isem-nnek" }
+};
+function setLang(lang) {
+  selectedLang = I18N[lang] ? lang : "fr";
+  try { localStorage.setItem("kuma_lang", selectedLang); } catch (e) {}
+  document.querySelectorAll(".lang-select button").forEach(b => b.classList.toggle("active", b.dataset.lang === selectedLang));
+  const t = I18N[selectedLang];
+  $("authTagline").textContent = t.welcome;
+  $("sendCodeBtn").textContent = t.send;
+  $("verifyCodeBtn").textContent = t.verify;
+  $("displayName").placeholder = t.name;
+}
+function authErrorMessage(err) {
+  const code = (err && err.code) || "";
+  if (code.startsWith("auth/api-key-not-valid") || code === "auth/invalid-api-key") return "Clé API invalide : vérifiez firebaseConfig dans index.html (copiez-la depuis Paramètres du projet → Vos applications).";
+  const map = {
+    "auth/invalid-phone-number": "Numéro invalide. Format international, ex : +223 70 00 00 00",
+    "auth/missing-phone-number": "Entrez votre numéro de téléphone.",
+    "auth/too-many-requests": "Trop de tentatives depuis cet appareil. Réessayez plus tard.",
+    "auth/quota-exceeded": "Quota de SMS du projet Firebase dépassé pour aujourd'hui.",
+    "auth/operation-not-allowed": "Connexion par téléphone refusée : activez « Téléphone » dans Authentication → Sign-in method, et vérifiez que le pays n'est pas bloqué dans Authentication → Settings → SMS region policy.",
+    "auth/billing-not-enabled": "Firebase exige le forfait Blaze pour envoyer de vrais SMS (les numéros de test fonctionnent sans).",
+    "auth/unauthorized-domain": "Ce domaine n'est pas autorisé : ajoutez-le dans Authentication → Settings → Domaines autorisés.",
+    "auth/captcha-check-failed": "Vérification anti-robot échouée. Rechargez la page.",
+    "auth/invalid-app-credential": "Vérification anti-robot refusée : vérifiez que ce domaine est autorisé dans Firebase.",
+    "auth/invalid-verification-code": "Code incorrect. Vérifiez le SMS.",
+    "auth/code-expired": "Code expiré : demandez-en un nouveau.",
+    "auth/network-request-failed": "Pas de connexion internet.",
+    "auth/user-disabled": "Ce compte a été désactivé."
+  };
+  return map[code] || ("Erreur : " + ((err && (err.message || err.code)) || "inconnue"));
+}
+function resetRecaptcha() {
+  try { if (window.recaptchaVerifier) window.recaptchaVerifier.clear(); } catch (e) {}
+  window.recaptchaVerifier = null;
+  $("recaptcha-container").innerHTML = "";
+}
+function ensureRecaptcha() {
+  if (!window.recaptchaVerifier) window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier("recaptcha-container", { size: "invisible" });
+  return window.recaptchaVerifier;
+}
+async function sendOtp() {
+  if (!CONFIG_OK) { toast("Configurez d'abord Firebase (firebaseConfig dans index.html).", 5000); return; }
+  const phone = normalizePhone($("phoneInput").value);
+  if (!validPhone(phone)) { toast("Numéro au format international, ex : +223 70 00 00 00"); return; }
+  const btn = $("sendCodeBtn"), label = btn.textContent;
+  btn.disabled = true; btn.textContent = "Envoi…";
+  try {
+    confirmationResult = await auth.signInWithPhoneNumber(phone, ensureRecaptcha());
+    $("codeSentTo").textContent = "Code envoyé par SMS au " + phone;
+    $("step-phone").classList.add("hidden");
+    $("step-code").classList.remove("hidden");
+    $("codeInput").value = ""; $("codeInput").focus();
+    startResendCountdown();
+  } catch (err) {
+    console.error(err); toast(authErrorMessage(err), 7000); resetRecaptcha();
+  } finally { btn.disabled = false; btn.textContent = label; }
+}
+function startResendCountdown() {
+  let n = 60; const b = $("resendBtn");
+  clearInterval(resendTimer); b.disabled = true; b.textContent = `Renvoyer le code (${n}s)`;
+  resendTimer = setInterval(() => {
+    n--;
+    if (n <= 0) { clearInterval(resendTimer); b.disabled = false; b.textContent = "Renvoyer le code"; }
+    else b.textContent = `Renvoyer le code (${n}s)`;
+  }, 1000);
+}
+async function verifyOtp() {
+  const code = $("codeInput").value.replace(/\D/g, "");
+  if (!confirmationResult || code.length < 6) { toast("Entrez le code à 6 chiffres reçu par SMS."); return; }
+  const btn = $("verifyCodeBtn"); if (btn.disabled) return; btn.disabled = true;
+  try {
+    const { user } = await confirmationResult.confirm(code);
+    const typed = $("displayName").value.trim().slice(0, 40);
+    const ref = db.collection("users").doc(user.uid);
+    const snap = await ref.get().catch(() => null);
+    const existing = snap && snap.exists ? snap.data() : {};
+    const data = { uid: user.uid, phone: user.phoneNumber, lang: selectedLang, online: true, lastSeen: FV.serverTimestamp() };
+    // Ne jamais écraser le nom d'un compte existant si le champ est laissé vide
+    if (typed) data.name = typed; else if (!existing.name) data.name = "Utilisateur KUMA";
+    if (!existing.about) data.about = "Disponible sur KUMA";
+    if (!existing.createdAt) data.createdAt = FV.serverTimestamp();
+    await ref.set(data, { merge: true });
+    if (data.name && user.displayName !== data.name) user.updateProfile({ displayName: data.name }).catch(() => {});
+  } catch (err) { console.error(err); toast(authErrorMessage(err), 6000); }
+  finally { btn.disabled = false; }
+}
+
+setLang(selectedLang);
+if (!CONFIG_OK) $("configWarning").classList.remove("hidden");
+document.querySelectorAll(".lang-select button").forEach(b => b.addEventListener("click", () => setLang(b.dataset.lang)));
+$("sendCodeBtn").addEventListener("click", sendOtp);
+$("phoneInput").addEventListener("keydown", e => { if (e.key === "Enter") sendOtp(); });
+$("verifyCodeBtn").addEventListener("click", verifyOtp);
+$("codeInput").addEventListener("input", e => { if (e.target.value.replace(/\D/g, "").length === 6) verifyOtp(); });
+$("resendBtn").addEventListener("click", () => { resetRecaptcha(); sendOtp(); });
+$("changeNumberBtn").addEventListener("click", () => {
+  clearInterval(resendTimer); confirmationResult = null; resetRecaptcha();
+  $("step-code").classList.add("hidden"); $("step-phone").classList.remove("hidden"); $("phoneInput").focus();
+});
+
+</script>
+
+<script>
+// ============================================================
+// 4. LISTE DES DISCUSSIONS, CONTACTS, GROUPES, MENU
+// ============================================================
+let chatsFilter = "all", searchTerm = "";
+const lastSeenMsgAt = {};
+let chatsLoaded = false;
+const readMarked = {}, deliveredMarked = {};
+
+function otherUid(c) { return (c.members || []).find(u => u !== me()); }
+function chatTitle(c) {
+  if (!c) return "";
+  if (c.isGroup) return c.name || "Groupe";
+  const o = otherUid(c);
+  return userName(o, (c.namesByUid || {})[o]);
+}
+function chatSeed(c) { return c.isGroup ? c.id : otherUid(c); }
+function unreadOf(c) { return ((c && c.unread) || {})[me()] || 0; }
+function typingUsers(c) {
+  return Object.entries((c && c.typing) || {})
+    .filter(([u, t]) => u !== me() && t && Date.now() - tsMillis(t) < 7000)
+    .map(([u]) => firstName(userName(u)));
+}
+function previewText(m) {
+  if (m.deleted) return "🚫 Message supprimé";
+  if (m.type === "voice") return "🎤 Note vocale (" + fmtDuration((m.durationMs || 0) / 1000) + ")";
+  if (m.type === "image") return "📷 " + (m.text || "Photo");
+  return String(m.text || "").slice(0, 200);
+}
+
+function initChatsList() {
+  chatsLoaded = false;
+  track(db.collection("chats").where("members", "array-contains", me()).orderBy("lastMessageAt", "desc")
+    .onSnapshot(snap => {
+      const chats = snap.docs.map(d => ({ id: d.id, ...d.data({ serverTimestamps: "estimate" }) }));
+      const wasIn = activeChatId && allChats.some(c => c.id === activeChatId);
+      if (chatsLoaded) notifyNewMessages(chats);
+      chats.forEach(c => { lastSeenMsgAt[c.id] = tsMillis(c.lastMessageAt); });
+      chatsLoaded = true;
+      allChats = chats;
+      chats.forEach(c => (c.members || []).slice(0, 80).forEach(watchUser));
+      markDelivered(chats);
+      if (activeChatId) {
+        const fresh = chats.find(c => c.id === activeChatId);
+        if (fresh) { activeChat = fresh; updateChatHeader(); renderPinnedBanner(); renderMessages(); markRead(fresh); }
+        else if (wasIn) { closeChat(); toast("Vous ne faites plus partie de cette discussion."); }
+      }
+      renderChatsList(); updateUnreadBadges(); renderGroupCallBanner();
+    }, showQueryError));
+}
+
+function notifyNewMessages(chats) {
+  chats.forEach(c => {
+    const prev = lastSeenMsgAt[c.id], cur = tsMillis(c.lastMessageAt);
+    if (!cur || !c.lastSenderId || c.lastSenderId === me() || (prev !== undefined && cur <= prev)) return;
+    const viewing = document.visibilityState === "visible" && activeChatId === c.id;
+    if (viewing) return;
+    if (document.visibilityState === "visible") beep(990, 0, 0.12, 0.08);
+    const who = c.isGroup ? `${firstName(userName(c.lastSenderId))} : ` : "";
+    notify(chatTitle(c), who + (c.lastMessage || ""), "chat-" + c.id);
+  });
+}
+
+// Accusés « distribué » (✓✓ gris) : un seul horodatage par discussion et par
+// personne, au lieu d'une écriture par message → bien moins de coûts Firestore.
+function markDelivered(chats) {
+  chats.forEach(c => {
+    const lm = tsMillis(c.lastMessageAt);
+    if (!c.lastSenderId || c.lastSenderId === me() || !lm) return;
+    if ((deliveredMarked[c.id] || 0) >= lm || tsMillis((c.deliveredAt || {})[me()]) >= lm) return;
+    deliveredMarked[c.id] = lm;
+    db.collection("chats").doc(c.id).update({ [`deliveredAt.${me()}`]: FV.serverTimestamp() }).catch(() => {});
+  });
+}
+// Accusés « lu » (✓✓ bleus) + remise à zéro du compteur non lu
+function markRead(c) {
+  if (!c || activeChatId !== c.id || document.visibilityState !== "visible") return;
+  const lm = tsMillis(c.lastMessageAt);
+  const fromOther = c.lastSenderId && c.lastSenderId !== me();
+  const needs = unreadOf(c) > 0 || (fromOther && (readMarked[c.id] || 0) < lm);
+  if (!needs) return;
+  readMarked[c.id] = lm; deliveredMarked[c.id] = lm;
+  const upd = { [`unread.${me()}`]: 0, [`deliveredAt.${me()}`]: FV.serverTimestamp() };
+  if (myProfile().readReceipts !== false) upd[`readAt.${me()}`] = FV.serverTimestamp();
+  db.collection("chats").doc(c.id).update(upd).catch(() => {});
+}
+
+function updateUnreadBadges() {
+  const n = allChats.filter(c => unreadOf(c) > 0).length;
+  const b = $("unreadTabBadge");
+  b.textContent = n; b.classList.toggle("hidden", !n);
+  document.title = n ? `(${n}) KUMA` : "KUMA";
+}
+
+function renderChatsList() {
+  const box = $("chatsList"); if (!box || !currentUser) return;
+  let chats = allChats;
+  if (chatsFilter === "unread") chats = chats.filter(c => unreadOf(c) > 0);
+  if (chatsFilter === "groups") chats = chats.filter(c => c.isGroup);
+  if (chatsFilter === "favorites") chats = chats.filter(c => (c.favorites || []).includes(me()));
+  if (searchTerm) {
+    const q = searchTerm.toLowerCase();
+    chats = chats.filter(c => chatTitle(c).toLowerCase().includes(q) || String(c.lastMessage || "").toLowerCase().includes(q));
+  }
+  if (!chats.length) {
+    box.innerHTML = `<div class="empty-state">${searchTerm ? "Aucun résultat." : chatsFilter === "all"
+      ? "Aucune discussion pour le moment.<br>Touchez 💬 pour écrire à quelqu'un avec son numéro."
+      : "Rien à afficher dans ce filtre."}</div>`;
+    return;
+  }
+  box.innerHTML = chats.map(c => {
+    const title = chatTitle(c);
+    const other = c.isGroup ? null : usersById[otherUid(c)];
+    const unread = unreadOf(c);
+    const typers = typingUsers(c);
+    let preview;
+    if (typers.length) preview = `<span class="last-msg typing">${c.isGroup ? esc(typers[0]) + " écrit…" : "écrit…"}</span>`;
+    else {
+      let prefix = "";
+      if (c.lastMessage && c.lastSenderId === me()) prefix = "Vous : ";
+      else if (c.lastMessage && c.isGroup && c.lastSenderId) prefix = firstName(userName(c.lastSenderId)) + " : ";
+      preview = `<span class="last-msg">${esc(prefix + (c.lastMessage || ""))}</span>`;
+    }
+    const dot = other && other.lastSeenVisible !== false && isOnline(other) ? '<span class="online-dot"></span>' : "";
+    const fav = (c.favorites || []).includes(me()) ? '<span class="fav">★</span>' : "";
+    return `<div class="chat-item" data-chat="${esc(c.id)}">
+      <div class="avatar-wrap">${avatar(title, chatSeed(c))}${dot}</div>
+      <div class="meta">
+        <div class="row1"><span class="name">${esc(title)}</span><span class="time ${unread ? "unread" : ""}">${esc(listTime(tsMillis(c.lastMessageAt)))}</span></div>
+        <div class="row2">${preview}<span class="row2-right">${fav}${unread ? `<span class="badge">${unread}</span>` : ""}</span></div>
+      </div></div>`;
+  }).join("");
+}
+
+// Rafraîchit « écrit… » quand il expire
+let lastTypingSig = "";
+setInterval(() => {
+  if (!currentUser) return;
+  const sig = allChats.map(c => typingUsers(c).join(",")).join("|");
+  if (sig !== lastTypingSig) { lastTypingSig = sig; renderChatsList(); if (activeChat) updateChatHeader(); }
+}, 2000);
+
+// ---------- Onglets, filtres, recherche ----------
+function switchTab(tab) {
+  document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("hidden", p.id !== "panel-" + tab));
+}
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
+document.querySelectorAll(".filters button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".filters button").forEach(x => x.classList.toggle("active", x === b));
+  chatsFilter = b.dataset.filter; renderChatsList();
+}));
+$("chatsList").addEventListener("click", e => { const it = e.target.closest("[data-chat]"); if (it) openChat(it.dataset.chat); });
+$("searchBtn").addEventListener("click", () => {
+  const row = $("searchRow"), show = row.classList.contains("hidden");
+  row.classList.toggle("hidden", !show);
+  if (show) { switchTab("chats"); $("searchInput").focus(); }
+  else { $("searchInput").value = ""; searchTerm = ""; renderChatsList(); }
+});
+$("searchInput").addEventListener("input", e => { searchTerm = e.target.value.trim(); renderChatsList(); });
+$("fabNewChat").addEventListener("click", openNewChatModal);
+$("menuBtn").addEventListener("click", openMenu);
+
+// ---------- Contacts ----------
+function contactUids() {
+  const set = new Set();
+  allChats.forEach(c => (c.members || []).forEach(u => { if (u !== me()) set.add(u); }));
+  return [...set];
+}
+function knownContacts() {
+  return contactUids().filter(u => usersById[u]).sort((a, b) => userName(a).localeCompare(userName(b), "fr"));
+}
+function contactRow(uid, extra) {
+  const u = usersById[uid] || {};
+  return `<div class="list-row" data-uid="${esc(uid)}">${avatar(userName(uid), uid, 44)}
+    <div style="flex:1;min-width:0"><div style="font-weight:600" class="ellipsis">${esc(userName(uid))}</div>
+    <div class="muted ellipsis">${esc(u.about || "")}</div></div>${extra || ""}</div>`;
+}
+async function findUserByPhone(raw) {
+  const phone = normalizePhone(raw);
+  if (!validPhone(phone)) { toast("Numéro au format international, ex : +223 70 00 00 00"); return null; }
+  if (currentUser.phoneNumber === phone) { toast("C'est votre propre numéro."); return null; }
+  const snap = await db.collection("users").where("phone", "==", phone).limit(1).get();
+  if (snap.empty) return { notFound: true, phone };
+  const u = snap.docs[0].data();
+  usersById[u.uid] = u; watchUser(u.uid);
+  return u;
+}
+async function invite(phone) {
+  const text = `Rejoins-moi sur KUMA, la messagerie gratuite : ${location.origin}${location.pathname}`;
+  if (navigator.share) { try { await navigator.share({ title: "KUMA", text }); } catch (e) {} return; }
+  try { await navigator.clipboard.writeText(text); toast("Lien d'invitation copié."); }
+  catch (e) { location.href = `sms:${phone}?body=${encodeURIComponent(text)}`; }
+}
+
+function openNewChatModal() {
+  const contacts = knownContacts();
+  const sheet = showModal(`<h3>Nouvelle discussion</h3>
+    <div class="row-inline"><input type="tel" id="ncPhone" placeholder="Numéro, ex : +223 70 00 00 00" autocomplete="off"><button class="btn" id="ncSearch">OK</button></div>
+    <div id="ncResult" style="margin-top:8px"></div>
+    <button class="btn secondary" id="ncGroup" style="margin-top:10px">👥 Nouveau groupe</button>
+    ${contacts.length ? `<div class="section-title">Contacts sur KUMA</div><div id="ncList">${contacts.map(u => contactRow(u)).join("")}</div>`
+      : `<p class="muted">Entrez le numéro de la personne pour lui écrire.</p>`}`);
+  on(sheet, "#ncGroup", openNewGroupModal);
+  const list = sheet.querySelector("#ncList");
+  if (list) list.onclick = e => { const r = e.target.closest("[data-uid]"); if (r) startDirectChat(r.dataset.uid); };
+  const doSearch = async () => {
+    const res = sheet.querySelector("#ncResult");
+    res.innerHTML = `<p class="muted">Recherche…</p>`;
+    try {
+      const u = await findUserByPhone(sheet.querySelector("#ncPhone").value);
+      if (!u) { res.innerHTML = ""; return; }
+      if (u.notFound) {
+        res.innerHTML = `<p class="muted">${esc(u.phone)} n'utilise pas encore KUMA.</p><button class="btn accent" id="ncInvite">Inviter sur KUMA</button>`;
+        on(sheet, "#ncInvite", () => invite(u.phone)); return;
+      }
+      res.innerHTML = contactRow(u.uid);
+      res.firstElementChild.onclick = () => startDirectChat(u.uid);
+    } catch (err) { console.error(err); res.innerHTML = `<p class="muted">Recherche impossible (${esc(err.code || "réseau")}).</p>`; }
+  };
+  on(sheet, "#ncSearch", doSearch);
+  sheet.querySelector("#ncPhone").addEventListener("keydown", e => { if (e.key === "Enter") doSearch(); });
+}
+
+// Discussion à deux : identifiant déterministe → jamais de doublon
+async function startDirectChat(uid) {
+  closeModal();
+  const local = allChats.find(c => !c.isGroup && (c.members || []).length === 2 && c.members.includes(uid));
+  if (local) { openChat(local.id); return; }
+  if (isBlockedPair(me(), uid)) { toast("Impossible : ce contact est bloqué."); return; }
+  const id = "dm_" + [me(), uid].sort().join("_");
+  const ref = db.collection("chats").doc(id);
+  let exists = false;
+  try { exists = (await ref.get()).exists; } catch (e) {}
+  if (exists) { openChat(id); return; }
+  const data = {
+    isGroup: false, members: [me(), uid],
+    namesByUid: { [me()]: myName(), [uid]: userName(uid) },
+    lastMessage: "", lastSenderId: "", lastMessageAt: FV.serverTimestamp(),
+    unread: { [me()]: 0, [uid]: 0 }, disappearingDuration: 0, createdAt: FV.serverTimestamp()
+  };
+  ref.set(data).catch(err => { console.error(err); toast("Impossible de créer la discussion."); });
+  openChat(id, { id, ...data, lastMessageAt: TS.now() });
+}
+
+function openNewGroupModal() {
+  const pool = knownContacts().filter(u => !isBlockedPair(me(), u));
+  const picked = new Set();
+  const sheet = showModal(`<h3>Nouveau groupe</h3>
+    <input type="text" id="ngName" placeholder="Nom du groupe" maxlength="50">
+    <div class="row-inline"><input type="tel" id="ngPhone" placeholder="Ajouter par numéro"><button class="btn" id="ngAdd">Ajouter</button></div>
+    <div class="section-title">Participants <span id="ngCount"></span></div>
+    <div id="ngList"></div>
+    <button class="btn center" id="ngCreate" style="margin-top:12px">Créer le groupe</button>`);
+  const renderList = () => {
+    sheet.querySelector("#ngCount").textContent = picked.size ? `(${picked.size})` : "";
+    sheet.querySelector("#ngList").innerHTML = pool.length
+      ? pool.map(uid => contactRow(uid, `<input type="checkbox" ${picked.has(uid) ? "checked" : ""} tabindex="-1" style="pointer-events:none;width:20px;height:20px">`)).join("")
+      : `<p class="muted">Ajoutez des participants avec leur numéro.</p>`;
+  };
+  renderList();
+  sheet.querySelector("#ngList").onclick = e => {
+    const r = e.target.closest("[data-uid]"); if (!r) return;
+    const u = r.dataset.uid; picked.has(u) ? picked.delete(u) : picked.add(u); renderList();
+  };
+  on(sheet, "#ngAdd", async () => {
+    let u = null;
+    try { u = await findUserByPhone(sheet.querySelector("#ngPhone").value); } catch (e) { toast("Recherche impossible"); }
+    if (!u) return;
+    if (u.notFound) { toast(u.phone + " n'utilise pas encore KUMA"); return; }
+    if (!pool.includes(u.uid)) pool.unshift(u.uid);
+    picked.add(u.uid); sheet.querySelector("#ngPhone").value = ""; renderList();
+  });
+  on(sheet, "#ngCreate", () => {
+    const name = sheet.querySelector("#ngName").value.trim();
+    if (!name) { toast("Donnez un nom au groupe"); return; }
+    if (!picked.size) { toast("Choisissez au moins un participant"); return; }
+    const members = [me(), ...picked], unread = {};
+    members.forEach(m => unread[m] = 0);
+    const ref = db.collection("chats").doc();
+    const data = {
+      isGroup: true, name, members, admins: [me()], createdBy: me(),
+      lastMessage: "Groupe créé", lastSenderId: me(), lastMessageAt: FV.serverTimestamp(),
+      unread, disappearingDuration: 0, createdAt: FV.serverTimestamp()
+    };
+    ref.set(data).catch(err => { console.error(err); toast("Création du groupe impossible."); });
+    closeModal();
+    openChat(ref.id, { id: ref.id, ...data, lastMessageAt: TS.now() });
+  });
+}
+
+// ---------- Infos de la discussion ----------
+function openChatInfo() {
+  const c = activeChat; if (!c) return;
+  const isAdmin = (c.admins || []).includes(me());
+  const fav = (c.favorites || []).includes(me());
+  const other = c.isGroup ? null : otherUid(c);
+  const u = other ? usersById[other] : null;
+  const blocked = other && (myProfile().blockedUsers || []).includes(other);
+  const dur = c.disappearingDuration || 0;
+  const opt = (v, l) => `<option value="${v}" ${dur === v ? "selected" : ""}>${l}</option>`;
+  const sheet = showModal(`
+    <div style="text-align:center"><div style="display:flex;justify-content:center">${avatar(chatTitle(c), chatSeed(c), 84)}</div>
+      <h3 style="margin:10px 0 2px">${esc(chatTitle(c))}</h3>
+      ${c.isGroup ? `<div class="muted">Groupe · ${(c.members || []).length} participants</div>` : u ? `<div class="muted">${esc(u.phone || "")}</div><p style="margin:6px 0 0">${esc(u.about || "")}</p>` : ""}
+    </div>
+    <div style="margin-top:14px">
+      ${c.isGroup ? "" : `<div class="row-inline" style="margin-bottom:8px"><button class="btn secondary center" id="ciVoice">📞 Appel</button><button class="btn secondary center" id="ciVideo">🎥 Vidéo</button></div>`}
+      <button class="btn secondary" id="ciFav">${fav ? "★ Retirer des favoris" : "☆ Ajouter aux favoris"}</button>
+    </div>
+    <div class="section-title">Messages éphémères</div>
+    <select id="ciDisappear">${opt(0, "Désactivés")}${opt(86400, "24 heures")}${opt(604800, "7 jours")}${opt(7776000, "90 jours")}</select>
+    ${c.isGroup ? `
+      <div class="section-title">${(c.members || []).length} participants</div>
+      ${isAdmin ? `<div class="row-inline" style="margin-bottom:6px"><input type="tel" id="ciAddPhone" placeholder="Ajouter un participant (numéro)"><button class="btn" id="ciAdd">Ajouter</button></div>` : ""}
+      <div id="ciMembers">${(c.members || []).map(uid => uid === me()
+        ? contactRow(uid, '<span class="muted">Vous</span>')
+        : contactRow(uid, (c.admins || []).includes(uid) ? '<span class="muted">Admin</span>' : "")).join("")}</div>
+      <button class="btn danger" id="ciLeave" style="margin-top:12px">Quitter le groupe</button>`
+    : `<button class="btn danger" id="ciBlock" style="margin-top:14px">${blocked ? "Débloquer" : "Bloquer"} ${esc(firstName(chatTitle(c)))}</button>`}`);
+
+  on(sheet, "#ciVoice", () => { closeModal(); startCall(other, false); });
+  on(sheet, "#ciVideo", () => { closeModal(); startCall(other, true); });
+  on(sheet, "#ciFav", () => {
+    db.collection("chats").doc(c.id).update({ favorites: fav ? FV.arrayRemove(me()) : FV.arrayUnion(me()) }).catch(() => {});
+    closeModal(); toast(fav ? "Retiré des favoris" : "Ajouté aux favoris");
+  });
+  sheet.querySelector("#ciDisappear").onchange = e => {
+    const v = parseInt(e.target.value, 10) || 0;
+    db.collection("chats").doc(c.id).update({ disappearingDuration: v }).catch(() => toast("Modification impossible"));
+    toast(v ? "Les nouveaux messages disparaîtront automatiquement" : "Messages éphémères désactivés");
+  };
+  const members = sheet.querySelector("#ciMembers");
+  if (members) members.onclick = e => { const r = e.target.closest("[data-uid]"); if (r && r.dataset.uid !== me()) startDirectChat(r.dataset.uid); };
+  on(sheet, "#ciAdd", async () => {
+    let u = null;
+    try { u = await findUserByPhone(sheet.querySelector("#ciAddPhone").value); } catch (e) { toast("Recherche impossible"); }
+    if (!u) return;
+    if (u.notFound) { toast(u.phone + " n'utilise pas encore KUMA"); return; }
+    if ((c.members || []).includes(u.uid)) { toast("Déjà dans le groupe"); return; }
+    db.collection("chats").doc(c.id).update({ members: FV.arrayUnion(u.uid), [`unread.${u.uid}`]: 0 })
+      .then(() => toast(userName(u.uid) + " a été ajouté(e)")).catch(() => toast("Ajout impossible"));
+    closeModal();
+  });
+  on(sheet, "#ciLeave", () => {
+    if (!confirm("Quitter ce groupe ?")) return;
+    db.collection("chats").doc(c.id).update({ members: FV.arrayRemove(me()) }).catch(() => toast("Impossible de quitter le groupe"));
+    closeModal(); closeChat();
+  });
+  on(sheet, "#ciBlock", () => { closeModal(); setBlocked(other, !blocked); });
+}
+function setBlocked(uid, block) {
+  db.collection("users").doc(me()).update({ blockedUsers: block ? FV.arrayUnion(uid) : FV.arrayRemove(uid) })
+    .then(() => toast(block ? "Contact bloqué" : "Contact débloqué")).catch(() => toast("Action impossible"));
+}
+
+// ---------- Menu ----------
+function openMenu() {
+  const sheet = showModal(`<h3>Menu</h3>
+    <button class="btn secondary" id="mProfile">👤 Mon profil</button>
+    <button class="btn secondary" id="mGroup">👥 Nouveau groupe</button>
+    <button class="btn secondary" id="mReadAll">✓ Tout marquer comme lu</button>
+    <button class="btn secondary" id="mPrivacy">🔒 Confidentialité</button>
+    <button class="btn secondary" id="mNotif">🔔 Notifications</button>
+    <button class="btn danger" id="mLogout">Se déconnecter</button>`);
+  on(sheet, "#mProfile", openProfile);
+  on(sheet, "#mGroup", openNewGroupModal);
+  on(sheet, "#mReadAll", () => {
+    const batch = db.batch(); let n = 0;
+    allChats.forEach(c => { if (unreadOf(c) > 0) { batch.update(db.collection("chats").doc(c.id), { [`unread.${me()}`]: 0 }); n++; } });
+    if (n) batch.commit().catch(() => {});
+    closeModal(); toast(n ? "Toutes les discussions sont lues" : "Aucune discussion non lue");
+  });
+  on(sheet, "#mPrivacy", openPrivacy);
+  on(sheet, "#mNotif", async () => {
+    closeModal();
+    if (!("Notification" in window)) { toast("Notifications non supportées sur ce navigateur."); return; }
+    const p = await Notification.requestPermission();
+    toast(p === "granted" ? "Notifications activées (quand KUMA est ouvert en arrière-plan)" : "Notifications refusées");
+  });
+  on(sheet, "#mLogout", async () => {
+    closeModal();
+    if (!confirm("Se déconnecter de KUMA ?")) return;
+    await Promise.race([setPresence(false), new Promise(r => setTimeout(r, 1500))]);
+    auth.signOut();
+  });
+}
+function openProfile() {
+  const p = myProfile();
+  const sheet = showModal(`<h3>Mon profil</h3>
+    <div style="text-align:center;margin-bottom:12px"><div style="display:flex;justify-content:center">${avatar(myName(), me(), 84)}</div>
+    <div class="muted" style="margin-top:6px">${esc(currentUser.phoneNumber || "")}</div></div>
+    <label class="muted">Nom</label><input type="text" id="pfName" maxlength="40" value="${esc(p.name || "")}">
+    <label class="muted">Infos</label><input type="text" id="pfAbout" maxlength="120" value="${esc(p.about || "")}">
+    <button class="btn center" id="pfSave">Enregistrer</button>`);
+  on(sheet, "#pfSave", () => {
+    const name = sheet.querySelector("#pfName").value.trim().slice(0, 40);
+    const about = sheet.querySelector("#pfAbout").value.trim().slice(0, 120);
+    if (!name) { toast("Le nom ne peut pas être vide"); return; }
+    db.collection("users").doc(me()).set({ name, about }, { merge: true }).catch(() => toast("Enregistrement impossible"));
+    currentUser.updateProfile({ displayName: name }).catch(() => {});
+    closeModal(); toast("Profil mis à jour");
+  });
+}
+function openPrivacy() {
+  const p = myProfile();
+  const blocked = p.blockedUsers || [];
+  blocked.forEach(watchUser);
+  const sheet = showModal(`<h3>Confidentialité</h3>
+    <label class="toggle-row"><span>Afficher « en ligne » et ma dernière connexion<br><span class="muted">Si vous la masquez, vous ne verrez pas non plus celle des autres.</span></span>
+      <input type="checkbox" id="pvSeen" ${p.lastSeenVisible !== false ? "checked" : ""}></label>
+    <label class="toggle-row"><span>Confirmations de lecture (✓✓ bleus)<br><span class="muted">Si désactivées, vous ne verrez pas non plus celles des autres.</span></span>
+      <input type="checkbox" id="pvRead" ${p.readReceipts !== false ? "checked" : ""}></label>
+    <div class="section-title">Contacts bloqués (${blocked.length})</div>
+    <div id="pvBlocked">${blocked.length ? blocked.map(uid => contactRow(uid, '<button class="btn secondary center" style="width:auto;margin:0">Débloquer</button>')).join("") : '<p class="muted">Aucun contact bloqué.</p>'}</div>`);
+  sheet.querySelector("#pvSeen").onchange = e => db.collection("users").doc(me()).update({ lastSeenVisible: e.target.checked }).catch(() => {});
+  sheet.querySelector("#pvRead").onchange = e => db.collection("users").doc(me()).update({ readReceipts: e.target.checked }).catch(() => {});
+  sheet.querySelector("#pvBlocked").onclick = e => {
+    if (!e.target.closest("button")) return;
+    const r = e.target.closest("[data-uid]"); if (!r) return;
+    setBlocked(r.dataset.uid, false); r.remove();
+  };
+}
+</script>
+
+<script>
+// ============================================================
+// 5. CONVERSATION
+// ============================================================
+let messagesUnsub = null, lastMsgs = [], msgsById = {};
+let replyingTo = null, editingId = null;
+let firstRender = true, stickBottomNext = false;
+const msgEls = new Map();
+
+function openChat(chatId, provisional) {
+  if (activeChatId === chatId) return;
+  if (activeChatId) closeChat();
+  activeChatId = chatId;
+  activeChat = allChats.find(c => c.id === chatId) || provisional || null;
+  replyingTo = null; editingId = null; renderContextBar();
+  $("messageInput").value = ""; updateActionBtn();
+  msgEls.clear(); lastMsgs = []; msgsById = {}; firstRender = true;
+  $("messagesList").innerHTML = `<div class="day-sep">Chargement…</div>`;
+  $("chatScreen").classList.remove("hidden");
+  updateChatHeader(); renderPinnedBanner(); renderGroupCallBanner();
+  if (activeChat) markRead(activeChat);
+  history.pushState({ kumaChat: chatId }, "");
+  messagesUnsub = db.collection("chats").doc(chatId).collection("messages")
+    .orderBy("createdAt", "asc").limitToLast(300)
+    .onSnapshot({ includeMetadataChanges: true }, snap => {
+      if (activeChatId !== chatId) return;
+      lastMsgs = snap.docs.map(d => ({ ...d.data({ serverTimestamps: "estimate" }), id: d.id, pending: d.metadata.hasPendingWrites }));
+      msgsById = {}; lastMsgs.forEach(m => msgsById[m.id] = m);
+      lastMsgs.forEach(m => watchUser(m.senderId));
+      renderMessages(); renderPinnedBanner();
+    }, showQueryError);
+}
+function closeChat() {
+  if (messagesUnsub) { messagesUnsub(); messagesUnsub = null; }
+  clearTyping();
+  if (isRecording()) stopRecording(false);
+  activeChatId = null; activeChat = null; lastMsgs = []; msgsById = {}; msgEls.clear();
+  replyingTo = null; editingId = null;
+  $("chatScreen").classList.add("hidden");
+  $("messagesList").innerHTML = "";
+}
+// Bouton « retour » du téléphone : ferme la discussion au lieu de quitter l'app
+window.addEventListener("popstate", () => { if (activeChatId) closeChat(); });
+$("backBtn").addEventListener("click", () => { if (history.state && history.state.kumaChat) history.back(); else closeChat(); });
+
+function lastSeenLabel(ms) {
+  const lbl = dayLabel(ms);
+  if (lbl === "Aujourd'hui") return "vu(e) aujourd'hui à " + fmtTime(ms);
+  if (lbl === "Hier") return "vu(e) hier à " + fmtTime(ms);
+  return "vu(e) le " + new Date(ms).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) + " à " + fmtTime(ms);
+}
+function updateChatHeader() {
+  const c = activeChat;
+  if (!c) { $("chatHeaderName").textContent = ""; $("chatHeaderStatus").textContent = ""; $("chatHeaderAvatar").innerHTML = ""; return; }
+  const title = chatTitle(c);
+  $("chatHeaderName").textContent = title;
+  $("chatHeaderAvatar").innerHTML = avatar(title, chatSeed(c), 40);
+  const st = $("chatHeaderStatus"), typers = typingUsers(c);
+  st.classList.toggle("typing", typers.length > 0);
+  if (typers.length) st.textContent = c.isGroup ? typers.join(", ") + " écrit…" : "écrit…";
+  else if (c.isGroup) st.textContent = (c.members || []).map(u => u === me() ? "Vous" : firstName(userName(u))).join(", ");
+  else {
+    const u = usersById[otherUid(c)];
+    const canSee = u && u.lastSeenVisible !== false && myProfile().lastSeenVisible !== false;
+    st.textContent = !canSee ? "" : isOnline(u) ? "en ligne" : (u.lastSeen ? lastSeenLabel(tsMillis(u.lastSeen)) : "");
+  }
+  const blocked = !c.isGroup && (myProfile().blockedUsers || []).includes(otherUid(c));
+  $("blockedBar").classList.toggle("hidden", !blocked);
+  $("composer").classList.toggle("hidden", blocked);
+}
+$("chatHeaderInfo").addEventListener("click", openChatInfo);
+$("chatInfoBtn").addEventListener("click", openChatInfo);
+$("unblockBtn").addEventListener("click", () => { if (activeChat) setBlocked(otherUid(activeChat), false); });
+$("voiceCallBtn").addEventListener("click", () => callFromChat(false));
+$("videoCallBtn").addEventListener("click", () => callFromChat(true));
+
+function renderPinnedBanner() {
+  const b = $("pinnedBanner"), c = activeChat;
+  const id = c && (c.pinnedMessageIds || [])[0];
+  const m = id && msgsById[id];
+  if (!m || m.deleted) { b.classList.add("hidden"); return; }
+  b.classList.remove("hidden");
+  b.innerHTML = `📌 <span>${esc(previewText(m))}</span>`;
+  b.onclick = () => scrollToMessage(id);
+}
+
+// ---------- Rendu des messages (incrémental : une note vocale en cours de
+// lecture n'est pas coupée quand un accusé de lecture ou un message arrive) ----------
+function isExpired(m) { return m.expiresAt && tsMillis(m.expiresAt) <= Date.now(); }
+function ticksHtml(m) {
+  if (m.pending) return '<span class="ticks" title="En attente de réseau">🕓</span>';
+  const c = activeChat; if (!c) return "";
+  const others = (c.members || []).filter(u => u !== me());
+  const t = tsMillis(m.createdAt);
+  if (!others.length) return '<span class="ticks">✓</span>';
+  const readAt = c.readAt || {}, delAt = c.deliveredAt || {};
+  const readAll = others.every(u => tsMillis(readAt[u]) >= t);
+  const delAll = others.every(u => tsMillis(delAt[u]) >= t || tsMillis(readAt[u]) >= t);
+  if (readAll && myProfile().readReceipts !== false) return '<span class="ticks read">✓✓</span>';
+  if (readAll || delAll) return '<span class="ticks">✓✓</span>';
+  return '<span class="ticks">✓</span>';
+}
+function messageParts(m, firstOfRun) {
+  const mine = m.senderId === me(), c = activeChat;
+  let inner = "";
+  if (c && c.isGroup && !mine && firstOfRun) inner += `<div class="sender" style="color:${nameColor(m.senderId)}">${esc(userName(m.senderId))}</div>`;
+  if (m.deleted) {
+    inner += `<span class="deleted">🚫 ${mine ? "Vous avez supprimé ce message" : "Ce message a été supprimé"}</span>`;
+  } else {
+    if (m.forwarded) inner += `<div class="fwd">↪ Transféré</div>`;
+    if (m.replyTo) inner += `<div class="quote" data-goto="${esc(m.replyTo.id)}"><div class="q-name">${esc(m.replyTo.senderId === me() ? "Vous" : userName(m.replyTo.senderId, m.replyTo.senderName))}</div><div class="q-text">${esc(m.replyTo.text)}</div></div>`;
+    if (m.type === "image") {
+      inner += `<img class="photo" src="${esc(safeUrl(m.mediaUrl))}" alt="Photo" loading="lazy">`;
+      if (m.text) inner += `<span class="text">${linkify(m.text)}</span>`;
+    } else if (m.type === "voice") {
+      inner += `<div class="voice"><audio controls preload="none" src="${esc(safeUrl(m.mediaUrl))}"></audio><span class="muted">${fmtDuration((m.durationMs || 0) / 1000)}</span></div>`;
+    } else {
+      inner += `<span class="text">${linkify(m.text)}</span>`;
+    }
+    const rx = Object.values(m.reactions || {}).filter(Boolean);
+    if (rx.length) {
+      const g = {}; rx.forEach(e => g[e] = (g[e] || 0) + 1);
+      inner += `<div class="reacts">${Object.entries(g).map(([e, n]) => `<span>${esc(e)}${n > 1 ? " " + n : ""}</span>`).join("")}</div>`;
+    }
+  }
+  const meta = (m.expiresAt && !m.deleted ? "⏱ " : "") + (m.edited && !m.deleted ? '<span class="edited">modifié</span> ' : "") + fmtTime(tsMillis(m.createdAt) || Date.now());
+  const slot = mine && !m.deleted ? ' <span class="ticks-slot"></span>' : "";
+  return {
+    body: `<div class="msg ${mine ? "out" : "in"}${firstOfRun ? " first" : ""}" data-mid="${esc(m.id)}">${inner}<span class="meta">${meta}${slot}</span></div>`,
+    ticks: mine && !m.deleted ? ticksHtml(m) : null
+  };
+}
+function buildEl(it) {
+  const tpl = document.createElement("template");
+  tpl.innerHTML = it.body.trim();
+  const el = tpl.content.firstElementChild;
+  el._key = it.key; el._body = it.body; el._ticks = it.ticks;
+  if (it.ticks != null) { const t = el.querySelector(".ticks-slot"); if (t) t.innerHTML = it.ticks; }
+  return el;
+}
+function renderMessages() {
+  const list = $("messagesList"); if (!activeChatId) return;
+  const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 160;
+  const items = [];
+  let lastDay = null, prevSender = null;
+  const visible = lastMsgs.filter(m => !isExpired(m));
+  visible.forEach(m => {
+    const ms = tsMillis(m.createdAt) || Date.now();
+    const day = new Date(ms).toDateString();
+    if (day !== lastDay) { items.push({ key: "d_" + day, body: `<div class="day-sep">${esc(dayLabel(ms))}</div>`, ticks: null }); lastDay = day; prevSender = null; }
+    items.push({ key: "m_" + m.id, ...messageParts(m, prevSender !== m.senderId) });
+    prevSender = m.senderId;
+  });
+  if (!visible.length) {
+    const c = activeChat;
+    items.push({ key: "empty", ticks: null, body: `<div class="day-sep">${c && c.disappearingDuration ? "⏱ Messages éphémères activés" : "🔒 Dites bonjour 👋"}</div>` });
+  }
+  const keys = new Set(items.map(i => i.key));
+  for (const [k, el] of msgEls) if (!keys.has(k)) { el.remove(); msgEls.delete(k); }
+  Array.from(list.children).forEach(ch => { if (!ch._key) ch.remove(); });
+  items.forEach((it, i) => {
+    let el = msgEls.get(it.key);
+    if (el && el._body !== it.body) { const n = buildEl(it); el.replaceWith(n); el = n; msgEls.set(it.key, n); }
+    else if (el && it.ticks != null && el._ticks !== it.ticks) { const t = el.querySelector(".ticks-slot"); if (t) t.innerHTML = it.ticks; el._ticks = it.ticks; }
+    if (!el) { el = buildEl(it); msgEls.set(it.key, el); }
+    if (list.children[i] !== el) list.insertBefore(el, list.children[i] || null);
+  });
+  if (firstRender || nearBottom || stickBottomNext) list.scrollTop = list.scrollHeight;
+  if (visible.length) firstRender = false;
+  stickBottomNext = false;
+}
+setInterval(() => { if (activeChatId && lastMsgs.some(m => m.expiresAt)) renderMessages(); }, 30000);
+
+function scrollToMessage(id) {
+  const el = msgEls.get("m_" + id);
+  if (!el) { toast("Message trop ancien pour être affiché"); return; }
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+  el.classList.remove("highlight"); void el.offsetWidth; el.classList.add("highlight");
+}
+
+$("messagesList").addEventListener("click", e => {
+  const t = e.target;
+  if (t.closest("audio") || t.closest("a")) return;
+  const q = t.closest(".quote"); if (q) { scrollToMessage(q.dataset.goto); return; }
+  if (t.matches("img.photo")) { openViewer(`<img src="${esc(t.src)}" alt="">`); return; }
+  const b = t.closest(".msg[data-mid]"); if (b) openMessageActions(b.dataset.mid);
+});
+$("messagesList").addEventListener("load", e => {
+  const l = $("messagesList");
+  if (e.target.tagName === "IMG" && l.scrollHeight - l.scrollTop - l.clientHeight < 400) l.scrollTop = l.scrollHeight;
+}, true);
+
+// ---------- Envoi ----------
+function pushMessage(payload, chat) {
+  chat = chat || activeChat;
+  if (!chat || !(chat.members || []).includes(me())) return Promise.resolve();
+  if (!chat.isGroup && isBlockedPair(me(), otherUid(chat))) { toast("Impossible d'envoyer : contact bloqué."); return Promise.resolve(); }
+  const chatRef = db.collection("chats").doc(chat.id);
+  const msgRef = chatRef.collection("messages").doc();
+  const data = { ...payload, senderId: me(), reactions: {}, createdAt: FV.serverTimestamp() };
+  if (chat.disappearingDuration) data.expiresAt = TS.fromMillis(Date.now() + chat.disappearingDuration * 1000);
+  const upd = { lastMessage: previewText(data), lastSenderId: me(), lastMessageAt: FV.serverTimestamp(), [`typing.${me()}`]: FV.delete() };
+  (chat.members || []).forEach(u => { if (u !== me()) upd[`unread.${u}`] = FV.increment(1); });
+  const batch = db.batch();
+  batch.set(msgRef, data);
+  batch.update(chatRef, upd);
+  if (chat.id === activeChatId) stickBottomNext = true;
+  // Pas d'« await » : hors-ligne, le message s'affiche tout de suite avec 🕓 et part au retour du réseau
+  return batch.commit().catch(err => { console.error(err); toast("Échec d'envoi : " + (err.code || err.message)); });
+}
+function sendText() {
+  const input = $("messageInput"), text = input.value.trim();
+  if (!text || !activeChat) return;
+  if (editingId) { saveEdit(text); return; }
+  input.value = ""; updateActionBtn(); typingSentAt = 0;
+  const payload = { type: "text", text: text.slice(0, 4000) };
+  if (replyingTo) payload.replyTo = replyingTo;
+  replyingTo = null; renderContextBar();
+  pushMessage(payload);
+}
+function saveEdit(text) {
+  const id = editingId, c = activeChat;
+  editingId = null; $("messageInput").value = ""; renderContextBar(); updateActionBtn();
+  db.collection("chats").doc(c.id).collection("messages").doc(id).update({ text: text.slice(0, 4000), edited: true, editedAt: FV.serverTimestamp() }).catch(() => toast("Modification impossible"));
+  if (lastMsgs.length && lastMsgs[lastMsgs.length - 1].id === id) db.collection("chats").doc(c.id).update({ lastMessage: text.slice(0, 200) }).catch(() => {});
+}
+
+// « écrit… »
+let typingSentAt = 0, typingIdle = null;
+function notifyTyping() {
+  if (!activeChat || !$("messageInput").value.trim()) { clearTyping(); return; }
+  const now = Date.now();
+  if (now - typingSentAt > 3000) {
+    typingSentAt = now;
+    db.collection("chats").doc(activeChat.id).update({ [`typing.${me()}`]: FV.serverTimestamp() }).catch(() => {});
+  }
+  clearTimeout(typingIdle); typingIdle = setTimeout(clearTyping, 4000);
+}
+function clearTyping() {
+  clearTimeout(typingIdle);
+  if (!activeChatId || !typingSentAt) return;
+  typingSentAt = 0;
+  db.collection("chats").doc(activeChatId).update({ [`typing.${me()}`]: FV.delete() }).catch(() => {});
+}
+
+function updateActionBtn() {
+  const b = $("actionBtn");
+  if (isRecording()) { b.textContent = "➤"; b.classList.add("recording"); b.setAttribute("aria-label", "Envoyer la note vocale"); return; }
+  b.classList.remove("recording");
+  if ($("messageInput").value.trim() || editingId) { b.textContent = editingId ? "✓" : "➤"; b.setAttribute("aria-label", "Envoyer"); }
+  else { b.textContent = "🎤"; b.setAttribute("aria-label", "Enregistrer une note vocale"); }
+}
+$("messageInput").addEventListener("input", () => { updateActionBtn(); notifyTyping(); });
+$("messageInput").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendText(); }
+  if (e.key === "Escape") { replyingTo = null; editingId = null; renderContextBar(); }
+});
+$("actionBtn").addEventListener("click", () => {
+  if (isRecording()) stopRecording(true);
+  else if ($("messageInput").value.trim() || editingId) sendText();
+  else startRecording();
+});
+
+function renderContextBar() {
+  const bar = $("contextBar");
+  if (!replyingTo && !editingId) { bar.classList.add("hidden"); bar.innerHTML = ""; return; }
+  const title = editingId ? "✏️ Modification du message" : "Réponse à " + (replyingTo.senderId === me() ? "vous-même" : userName(replyingTo.senderId, replyingTo.senderName));
+  const text = editingId ? ((msgsById[editingId] || {}).text || "") : replyingTo.text;
+  bar.classList.remove("hidden");
+  bar.innerHTML = `<div class="cb-body"><div class="cb-title">${esc(title)}</div><div class="cb-text">${esc(text)}</div></div><button class="icon-btn" id="cbClose" aria-label="Annuler">✕</button>`;
+  on(bar, "#cbClose", () => { if (editingId) $("messageInput").value = ""; replyingTo = null; editingId = null; renderContextBar(); updateActionBtn(); });
+}
+
+// ---------- Actions sur un message ----------
+function openMessageActions(id) {
+  const m = msgsById[id]; if (!m || !activeChat) return;
+  const mine = m.senderId === me();
+  const myReact = (m.reactions || {})[me()];
+  const pinned = (activeChat.pinnedMessageIds || []).includes(id);
+  const canEdit = mine && !m.deleted && m.type === "text" && Date.now() - tsMillis(m.createdAt) < 15 * 60 * 1000;
+  let info = "";
+  if (mine && !m.deleted && !m.pending) {
+    const others = (activeChat.members || []).filter(u => u !== me()), t = tsMillis(m.createdAt);
+    const readers = others.filter(u => tsMillis((activeChat.readAt || {})[u]) >= t);
+    info = activeChat.isGroup ? `Lu par ${readers.length}/${others.length}` + (readers.length ? " : " + readers.map(u => firstName(userName(u))).join(", ") : "")
+      : (readers.length ? "Lu" : "Envoyé") + " · " + fmtTime(t);
+  }
+  const sheet = showModal(`
+    ${m.deleted ? "" : `<div class="react-row">${REACTIONS.map(e => `<button data-r="${esc(e)}" class="${myReact === e ? "mine" : ""}">${e}</button>`).join("")}</div>`}
+    ${m.deleted ? "" : `<button class="btn secondary" id="maReply">↩️ Répondre</button>`}
+    ${m.deleted ? "" : `<button class="btn secondary" id="maFwd">↪️ Transférer</button>`}
+    ${m.type === "text" && !m.deleted ? `<button class="btn secondary" id="maCopy">📋 Copier</button>` : ""}
+    ${m.deleted ? "" : `<button class="btn secondary" id="maPin">📌 ${pinned ? "Désépingler" : "Épingler"}</button>`}
+    ${canEdit ? `<button class="btn secondary" id="maEdit">✏️ Modifier</button>` : ""}
+    ${mine && !m.deleted ? `<button class="btn danger" id="maDel">🗑️ Supprimer pour tous</button>` : ""}
+    ${info ? `<p class="muted" style="text-align:center">${esc(info)}</p>` : ""}`);
+  const rr = sheet.querySelector(".react-row");
+  if (rr) rr.onclick = e => {
+    const b = e.target.closest("[data-r]"); if (!b) return;
+    const emoji = b.dataset.r;
+    db.collection("chats").doc(activeChat.id).collection("messages").doc(id)
+      .update({ [`reactions.${me()}`]: myReact === emoji ? FV.delete() : emoji }).catch(() => toast("Réaction impossible"));
+    closeModal();
+  };
+  on(sheet, "#maReply", () => {
+    closeModal(); editingId = null;
+    replyingTo = { id, senderId: m.senderId, senderName: userName(m.senderId), text: previewText(m).slice(0, 140) };
+    renderContextBar(); $("messageInput").focus();
+  });
+  on(sheet, "#maFwd", () => openForwardPicker(m));
+  on(sheet, "#maCopy", () => { navigator.clipboard.writeText(m.text || "").then(() => toast("Copié")).catch(() => toast("Copie impossible")); closeModal(); });
+  on(sheet, "#maPin", () => {
+    db.collection("chats").doc(activeChat.id).update({ pinnedMessageIds: pinned ? [] : [id] }).catch(() => toast("Action impossible"));
+    closeModal();
+  });
+  on(sheet, "#maEdit", () => {
+    closeModal(); replyingTo = null; editingId = id;
+    $("messageInput").value = m.text || ""; renderContextBar(); updateActionBtn(); $("messageInput").focus();
+  });
+  on(sheet, "#maDel", () => {
+    if (!confirm("Supprimer ce message pour tout le monde ?")) return;
+    const c = activeChat;
+    db.collection("chats").doc(c.id).collection("messages").doc(id).update({ deleted: true, text: "", mediaUrl: "", replyTo: null }).catch(() => toast("Suppression impossible"));
+    const upd = {};
+    if (lastMsgs.length && lastMsgs[lastMsgs.length - 1].id === id) upd.lastMessage = "🚫 Message supprimé";
+    if (pinned) upd.pinnedMessageIds = [];
+    if (Object.keys(upd).length) db.collection("chats").doc(c.id).update(upd).catch(() => {});
+    closeModal();
+  });
+}
+function openForwardPicker(m) {
+  const chats = allChats.filter(c => !(!c.isGroup && isBlockedPair(me(), otherUid(c))));
+  const sheet = showModal(`<h3>Transférer à…</h3><div id="fwList">${chats.map(c => `<div class="list-row" data-chat="${esc(c.id)}">${avatar(chatTitle(c), chatSeed(c), 44)}<div class="ellipsis" style="font-weight:600">${esc(chatTitle(c))}</div></div>`).join("") || '<p class="muted">Aucune discussion.</p>'}</div>`);
+  sheet.querySelector("#fwList").onclick = e => {
+    const r = e.target.closest("[data-chat]"); if (!r) return;
+    const target = allChats.find(c => c.id === r.dataset.chat); if (!target) return;
+    const payload = { type: m.type || "text", text: m.text || "", forwarded: true };
+    if (m.mediaUrl) payload.mediaUrl = m.mediaUrl;
+    if (m.durationMs) payload.durationMs = m.durationMs;
+    pushMessage(payload, target);
+    closeModal(); toast("Transféré à " + chatTitle(target));
+  };
+}
+
+// ---------- Notes vocales (compressées pour la 2G/3G) ----------
+let mediaRecorder = null, recChunks = [], recStart = 0, recTimer = null, recSend = false, recStream = null, recChat = null;
+function isRecording() { return !!(mediaRecorder && mediaRecorder.state === "recording"); }
+function pickAudioMime() {
+  const c = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"];
+  for (const t of c) { try { if (MediaRecorder.isTypeSupported(t)) return t; } catch (e) {} }
+  return "";
+}
+async function startRecording() {
+  if (!window.MediaRecorder || !navigator.mediaDevices) { toast("Enregistrement audio non supporté sur ce navigateur."); return; }
+  try { recStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+  catch (e) { toast("Micro inaccessible : autorisez le micro dans le navigateur."); return; }
+  const mime = pickAudioMime();
+  try { mediaRecorder = new MediaRecorder(recStream, mime ? { mimeType: mime, audioBitsPerSecond: 24000 } : undefined); }
+  catch (e) { mediaRecorder = new MediaRecorder(recStream); }
+  recChunks = []; recSend = false; recChat = activeChat;
+  mediaRecorder.ondataavailable = e => { if (e.data && e.data.size) recChunks.push(e.data); };
+  mediaRecorder.onstop = () => {
+    const dur = Date.now() - recStart;
+    recStream.getTracks().forEach(t => t.stop());
+    clearInterval(recTimer); setRecUI(false);
+    if (!recSend) return;
+    if (dur < 800) { toast("Note trop courte"); return; }
+    const type = (mediaRecorder.mimeType || mime || "audio/webm").split(";")[0];
+    uploadVoice(new Blob(recChunks, { type }), dur, recChat);
+  };
+  mediaRecorder.start(); recStart = Date.now(); setRecUI(true);
+  recTimer = setInterval(() => {
+    const s = (Date.now() - recStart) / 1000;
+    $("recTime").textContent = fmtDuration(s);
+    if (s >= 300) stopRecording(true);
+  }, 250);
+}
+function stopRecording(send) { if (!isRecording()) return; recSend = send; mediaRecorder.stop(); }
+function setRecUI(on) {
+  $("inputWrap").classList.toggle("hidden", on);
+  $("recBar").classList.toggle("hidden", !on);
+  $("recTime").textContent = "0:00";
+  updateActionBtn();
+}
+$("recCancel").addEventListener("click", () => stopRecording(false));
+async function uploadVoice(blob, durationMs, chat) {
+  if (!chat) return;
+  const ext = blob.type.includes("mp4") ? "m4a" : blob.type.includes("ogg") ? "ogg" : "webm";
+  toast("Envoi de la note vocale…", 60000);
+  try {
+    const ref = storage.ref(`voice/${chat.id}/${Date.now()}_${me()}.${ext}`);
+    await ref.put(blob, { contentType: blob.type || "audio/webm" });
+    const url = await ref.getDownloadURL();
+    hideToast();
+    pushMessage({ type: "voice", mediaUrl: url, durationMs }, chat);
+  } catch (err) { console.error(err); toast("Échec de l'envoi de la note vocale (" + (err.code || "réseau") + ")"); }
+}
+
+// ---------- Photos (redimensionnées et compressées avant envoi) ----------
+async function compressImage(file, maxDim = 1280, quality = 0.72) {
+  if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
+    const cv = document.createElement("canvas");
+    cv.width = Math.round(bmp.width * scale); cv.height = Math.round(bmp.height * scale);
+    cv.getContext("2d").drawImage(bmp, 0, 0, cv.width, cv.height);
+    const blob = await new Promise(r => cv.toBlob(r, "image/jpeg", quality));
+    return blob && blob.size < file.size ? blob : file;
+  } catch (e) { return file; }
+}
+async function uploadImage(file, path) {
+  const blob = await compressImage(file);
+  const type = blob.type || "image/jpeg";
+  const ext = type === "image/png" ? "png" : type === "image/gif" ? "gif" : type === "image/webp" ? "webp" : "jpg";
+  const ref = storage.ref(`${path}.${ext}`);
+  await ref.put(blob, { contentType: type });
+  return ref.getDownloadURL();
+}
+$("attachBtn").addEventListener("click", () => $("imageInput").click());
+$("imageInput").addEventListener("change", async e => {
+  const file = e.target.files[0]; e.target.value = "";
+  const chat = activeChat; if (!file || !chat) return;
+  if (!file.type.startsWith("image/")) { toast("Choisissez une image."); return; }
+  const caption = $("messageInput").value.trim();
+  toast("Envoi de la photo…", 60000);
+  try {
+    const url = await uploadImage(file, `images/${chat.id}/${Date.now()}_${me()}`);
+    hideToast();
+    if (caption && activeChat === chat && !editingId) { $("messageInput").value = ""; updateActionBtn(); }
+    pushMessage({ type: "image", mediaUrl: url, text: caption && !editingId ? caption.slice(0, 1000) : "" }, chat);
+  } catch (err) { console.error(err); toast("Échec de l'envoi de la photo (" + (err.code || "réseau") + ")"); }
+});
+
+// ---------- Visionneuse ----------
+function openViewer(html) { $("viewerBody").innerHTML = html; $("viewer").classList.remove("hidden"); }
+function closeViewer() { if (sv) { clearTimeout(sv.timer); sv = null; } $("viewer").classList.add("hidden"); $("viewerBody").innerHTML = ""; }
+$("viewerClose").addEventListener("click", closeViewer);
+</script>
+
+<script>
+// ============================================================
+// 6. ACTUS (statuts 24 h) — visibles uniquement par vos contacts
+// ============================================================
+let myStatuses = [], othersStatuses = [], sv = null;
+
+function initStatusTab() {
+  const now = TS.now();
+  const map = s => s.docs.map(d => ({ id: d.id, ...d.data({ serverTimestamps: "estimate" }) }));
+  track(db.collection("statuses").where("audience", "array-contains", me()).where("expiresAt", ">", now).orderBy("expiresAt", "desc")
+    .onSnapshot(s => { othersStatuses = map(s).filter(x => x.userId !== me()); othersStatuses.forEach(x => watchUser(x.userId)); renderStatusTab(); }, showQueryError));
+  track(db.collection("statuses").where("userId", "==", me()).where("expiresAt", ">", now).orderBy("expiresAt", "desc")
+    .onSnapshot(s => { myStatuses = map(s); renderStatusTab(); }, showQueryError));
+}
+function liveStatuses(list) { return list.filter(x => tsMillis(x.expiresAt) > Date.now()).sort((a, b) => tsMillis(a.createdAt) - tsMillis(b.createdAt)); }
+function renderStatusTab() {
+  const box = $("statusTabContent"); if (!box || !currentUser) return;
+  const mine = liveStatuses(myStatuses);
+  const byUser = {};
+  liveStatuses(othersStatuses).forEach(s => (byUser[s.userId] = byUser[s.userId] || []).push(s));
+  const groups = Object.entries(byUser).map(([uid, items]) => ({ uid, items, unseen: items.some(i => !(i.viewedBy || []).includes(me())), last: tsMillis(items[items.length - 1].createdAt) }))
+    .sort((a, b) => b.last - a.last);
+  const row = g => `<div class="status-row" data-suid="${esc(g.uid)}"><div class="status-ring ${g.unseen ? "" : "seen"}">${avatar(userName(g.uid, g.items[0].userName), g.uid, 48)}</div>
+    <div><div style="font-weight:600">${esc(userName(g.uid, g.items[0].userName))}</div><div class="muted">${esc(listTime(g.last))}</div></div></div>`;
+  const unseen = groups.filter(g => g.unseen), seen = groups.filter(g => !g.unseen);
+  box.innerHTML = `
+    <div class="status-row" id="myStatusRow"><div class="status-ring ${mine.length ? "seen" : "mine"}">${avatar(myName(), me(), 48)}${mine.length ? "" : '<span class="plus">+</span>'}</div>
+      <div><div style="font-weight:600">Mon actu</div><div class="muted">${mine.length ? mine.length + " actu(s) · " + esc(listTime(tsMillis(mine[mine.length - 1].createdAt))) : "Appuyez pour publier une actu (24 h)"}</div></div></div>
+    ${unseen.length ? `<div class="section-label">Récentes</div>${unseen.map(row).join("")}` : ""}
+    ${seen.length ? `<div class="section-label">Déjà vues</div>${seen.map(row).join("")}` : ""}
+    ${!groups.length ? `<div class="empty-state">Les actus de vos contacts apparaîtront ici.</div>` : ""}`;
+  $("myStatusRow").onclick = () => mine.length ? openStatusViewer(mine) : openAddStatus();
+  box.querySelectorAll("[data-suid]").forEach(el => el.onclick = () => {
+    const items = byUser[el.dataset.suid] || [];
+    const firstUnseen = items.findIndex(i => !(i.viewedBy || []).includes(me()));
+    openStatusViewer(items, Math.max(0, firstUnseen));
+  });
+}
+$("fabStatus").addEventListener("click", () => openAddStatus());
+
+function openAddStatus() {
+  let bg = STATUS_COLORS[Math.floor(Math.random() * STATUS_COLORS.length)];
+  const sheet = showModal(`<h3>Nouvelle actu</h3>
+    <textarea id="stText" rows="3" maxlength="700" placeholder="Écrivez quelque chose…"></textarea>
+    <div class="color-choices" id="stColors">${STATUS_COLORS.map(c => `<button data-c="${c}" style="background:${c}" class="${c === bg ? "sel" : ""}" aria-label="Couleur"></button>`).join("")}</div>
+    <label class="btn secondary center" style="cursor:pointer">📷 Ajouter une photo<input type="file" id="stImage" accept="image/*" class="hidden"></label>
+    <div id="stImgName" class="muted" style="margin:-2px 0 10px"></div>
+    <button class="btn center" id="stPublish">Publier (visible 24 h par vos contacts)</button>`);
+  sheet.querySelector("#stColors").onclick = e => {
+    const b = e.target.closest("[data-c]"); if (!b) return;
+    bg = b.dataset.c; sheet.querySelectorAll("#stColors button").forEach(x => x.classList.toggle("sel", x === b));
+  };
+  sheet.querySelector("#stImage").onchange = e => { const f = e.target.files[0]; sheet.querySelector("#stImgName").textContent = f ? "Photo : " + f.name : ""; };
+  on(sheet, "#stPublish", async () => {
+    const text = sheet.querySelector("#stText").value.trim().slice(0, 700);
+    const file = sheet.querySelector("#stImage").files[0];
+    if (!text && !file) { toast("Écrivez un texte ou ajoutez une photo"); return; }
+    const btn = sheet.querySelector("#stPublish"); btn.disabled = true; btn.textContent = "Publication…";
+    try {
+      let mediaUrl = "";
+      if (file) mediaUrl = await uploadImage(file, `status/${me()}/${Date.now()}`);
+      await db.collection("statuses").add({
+        userId: me(), userName: myName(), text, bg, mediaUrl,
+        audience: contactUids().slice(0, 900),
+        createdAt: FV.serverTimestamp(), expiresAt: TS.fromMillis(Date.now() + 24 * 3600 * 1000), viewedBy: []
+      });
+      closeModal(); toast("Actu publiée pour 24 h");
+    } catch (err) { console.error(err); toast("Publication impossible (" + (err.code || "réseau") + ")"); btn.disabled = false; btn.textContent = "Publier"; }
+  });
+}
+function openStatusViewer(items, start) {
+  if (!items.length) return;
+  sv = { items, i: start || 0, timer: null };
+  showStatusItem();
+}
+function showStatusItem() {
+  if (!sv) return;
+  clearTimeout(sv.timer);
+  const it = sv.items[sv.i];
+  if (!it) { closeViewer(); return; }
+  const mine = it.userId === me();
+  if (!mine && !(it.viewedBy || []).includes(me())) db.collection("statuses").doc(it.id).update({ viewedBy: FV.arrayUnion(me()) }).catch(() => {});
+  const content = it.mediaUrl
+    ? `<img src="${esc(safeUrl(it.mediaUrl))}" alt="">${it.text ? `<div class="sv-caption">${esc(it.text)}</div>` : ""}`
+    : `<div class="status-text-card" style="background:${esc(safeColor(it.bg))}">${esc(it.text)}</div>`;
+  const viewers = (it.viewedBy || []);
+  $("viewerBody").innerHTML = `<div class="sv">
+    <div class="sv-bars">${sv.items.map((_, k) => `<div class="sv-bar"><div class="sv-fill" style="width:${k < sv.i ? 100 : 0}%"></div></div>`).join("")}</div>
+    <div class="sv-head">${avatar(mine ? myName() : userName(it.userId, it.userName), it.userId, 38)}
+      <div><b>${esc(mine ? "Mon actu" : userName(it.userId, it.userName))}</b><div class="when">${esc(listTime(tsMillis(it.createdAt)))}</div></div></div>
+    <div class="sv-content">${content}</div>
+    <div class="sv-nav"><div data-nav="-1"></div><div data-nav="1"></div></div>
+    ${mine ? `<div class="sv-foot"><span>👁 ${viewers.length} vue(s)${viewers.length ? " : " + esc(viewers.slice(0, 5).map(u => firstName(userName(u))).join(", ")) : ""}</span><button id="svDel">🗑️ Supprimer</button></div>` : ""}
+  </div>`;
+  $("viewer").classList.remove("hidden");
+  const fill = $("viewerBody").querySelectorAll(".sv-fill")[sv.i];
+  requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.transition = "width 5s linear"; fill.style.width = "100%"; }));
+  sv.timer = setTimeout(() => { if (sv) { sv.i++; showStatusItem(); } }, 5000);
+  $("viewerBody").querySelector(".sv-nav").onclick = e => {
+    const d = e.target.dataset.nav; if (!d || !sv) return;
+    sv.i = Math.max(0, sv.i + parseInt(d, 10)); showStatusItem();
+  };
+  const del = $("viewerBody").querySelector("#svDel");
+  if (del) del.onclick = () => {
+    if (!confirm("Supprimer cette actu ?")) return;
+    db.collection("statuses").doc(it.id).delete().catch(() => toast("Suppression impossible"));
+    closeViewer(); toast("Actu supprimée");
+  };
+}
+</script>
+
+<script>
+// ============================================================
+// 7. APPELS AUDIO / VIDÉO (WebRTC, signalisation Firestore)
+//    1-à-1 : offre/réponse classique · Groupe : maillage (chacun ↔ chacun)
+// ============================================================
+const C = {};          // appel en cours
+const G = { conns: {}, streams: {}, names: {}, unsubs: [], nonce: "", beat: null };
+let incoming = null;   // appel entrant affiché
+let callHistory = [];
+const activeGroupCalls = {};
+const dismissedGroupCalls = new Set();
+
+function resetCall() {
+  Object.assign(C, { active: false, id: null, isGroup: false, video: false, pc: null, local: null, unsubs: [], localQ: [], docReady: false,
+    timer: null, connectedAt: 0, ringTimeout: null, role: null, peerUid: null, chatId: null, chatName: "" });
+}
+resetCall();
+
+function initCallsTab() {
+  track(db.collection("calls").where("participants", "array-contains", me()).orderBy("startedAt", "desc").limit(60)
+    .onSnapshot(s => {
+      callHistory = s.docs.map(d => ({ id: d.id, ...d.data({ serverTimestamps: "estimate" }) }));
+      callHistory.forEach(c => { if (!c.isGroup) { watchUser(c.callerId); watchUser(c.calleeId); } });
+      renderCallsTab();
+    }, showQueryError));
+  // Appels 1-à-1 entrants
+  track(db.collection("calls").where("calleeId", "==", me()).where("status", "==", "ringing")
+    .onSnapshot(s => s.docChanges().forEach(ch => {
+      if (ch.type === "added") onIncomingCall(ch.doc.id, ch.doc.data({ serverTimestamps: "estimate" }));
+      if (ch.type === "removed" && incoming && incoming.id === ch.doc.id) hideIncoming();
+    }), showQueryError));
+  // Appels de groupe en cours dans mes groupes
+  track(db.collection("calls").where("chatMembers", "array-contains", me()).where("status", "==", "active")
+    .onSnapshot(s => {
+      Object.keys(activeGroupCalls).forEach(k => delete activeGroupCalls[k]);
+      s.docs.forEach(d => {
+        const x = d.data({ serverTimestamps: "estimate" });
+        if (Date.now() - tsMillis(x.startedAt) < 6 * 3600 * 1000) activeGroupCalls[x.chatId] = { id: d.id, ...x };
+      });
+      s.docChanges().forEach(ch => {
+        if (ch.type !== "added") return;
+        const x = ch.doc.data({ serverTimestamps: "estimate" });
+        if (!C.active && !incoming && x.callerId !== me() && !dismissedGroupCalls.has(ch.doc.id) && Date.now() - tsMillis(x.startedAt) < 120000)
+          showIncomingGroupCall(ch.doc.id, x);
+      });
+      renderGroupCallBanner();
+    }, showQueryError));
+}
+
+function renderCallsTab() {
+  const box = $("callsTabContent"); if (!box || !currentUser) return;
+  if (!callHistory.length) { box.innerHTML = `<div class="empty-state">Aucun appel récent.<br>Touchez 📞 pour appeler un contact.</div>`; return; }
+  box.innerHTML = callHistory.map(c => {
+    const out = c.callerId === me();
+    const peer = out ? c.calleeId : c.callerId;
+    const name = c.isGroup ? (c.chatName || "Appel de groupe") : userName(peer, out ? c.calleeName : c.callerName);
+    const seed = c.isGroup ? c.chatId : peer;
+    const unanswered = ["missed", "declined", "busy", "ringing"].includes(c.status);
+    const missed = !c.isGroup && !out && unanswered;
+    const what = c.isGroup ? "Groupe" : c.video ? "Vidéo" : "Vocal";
+    const extra = c.duration ? " · " + fmtDuration(c.duration) : missed ? " · manqué" : (!c.isGroup && out && unanswered ? " · sans réponse" : "");
+    return `<div class="call-item">${avatar(name, seed, 46)}
+      <div style="flex:1;min-width:0"><div class="name ellipsis ${missed ? "missed" : ""}">${esc(name)}</div>
+      <div class="sub ${missed ? "missed" : ""}">${out ? "↗" : "↙"} ${what}${esc(extra)} · ${esc(listTime(tsMillis(c.startedAt)))}</div></div>
+      <button class="icon-btn call-again" data-again="${esc(c.id)}" aria-label="Rappeler">${c.video ? "🎥" : "📞"}</button></div>`;
+  }).join("");
+}
+$("callsTabContent").addEventListener("click", e => {
+  const b = e.target.closest("[data-again]"); if (!b) return;
+  const c = callHistory.find(x => x.id === b.dataset.again); if (!c) return;
+  if (c.isGroup) joinGroupCall(c.chatId, !!c.video);
+  else startCall(c.callerId === me() ? c.calleeId : c.callerId, !!c.video);
+});
+$("fabCall").addEventListener("click", () => {
+  const contacts = knownContacts();
+  const sheet = showModal(`<h3>Nouvel appel</h3>${contacts.length
+    ? `<div id="ncCall">${contacts.map(u => contactRow(u, `<button class="icon-btn" data-call="v">📞</button><button class="icon-btn" data-call="video">🎥</button>`)).join("")}</div>`
+    : `<p class="muted">Commencez d'abord une discussion avec un contact (onglet Discussions → 💬).</p>`}`);
+  const list = sheet.querySelector("#ncCall");
+  if (list) list.onclick = e => {
+    const r = e.target.closest("[data-uid]"), b = e.target.closest("[data-call]");
+    if (!r || !b) return;
+    closeModal(); startCall(r.dataset.uid, b.dataset.call === "video");
+  };
+});
+
+function callFromChat(video) {
+  const c = activeChat; if (!c) return;
+  if (c.isGroup) joinGroupCall(c.id, video);
+  else startCall(otherUid(c), video);
+}
+function renderGroupCallBanner() {
+  const b = $("groupCallBanner");
+  const gc = activeChatId && activeGroupCalls[activeChatId];
+  if (!gc || (C.active && C.chatId === activeChatId)) { b.classList.add("hidden"); return; }
+  b.classList.remove("hidden");
+  b.innerHTML = `📞 <span>Appel de groupe en cours — Toucher pour rejoindre</span>`;
+  b.onclick = () => joinGroupCall(activeChatId, !!gc.video);
+}
+
+// ---------- Outils WebRTC ----------
+async function getMedia(video) {
+  return navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+    video: video ? { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 24 } } : false
+  });
+}
+async function acquireMedia(video) {
+  if (!navigator.mediaDevices || !window.RTCPeerConnection) { toast("Les appels ne sont pas supportés par ce navigateur."); return null; }
+  try { return { stream: await getMedia(video), video }; }
+  catch (e) {
+    if (video) { try { const s = await getMedia(false); toast("Caméra indisponible : appel vocal."); return { stream: s, video: false }; } catch (e2) {} }
+    toast("Micro inaccessible : autorisez-le dans le navigateur.", 4000); return null;
+  }
+}
+// Les candidats ICE qui arrivent avant la description distante sont mis en file
+// (sinon ils sont perdus et la connexion échoue souvent).
+function addRemoteCand(pc, cand) {
+  if (pc.remoteDescription && pc.remoteDescription.type) pc.addIceCandidate(cand).catch(() => {});
+  else (pc._q = pc._q || []).push(cand);
+}
+function flushRemote(pc) { (pc._q || []).splice(0).forEach(c => pc.addIceCandidate(c).catch(() => {})); }
+function watchPcState(pc) {
+  const handle = state => {
+    if (C.pc !== pc) return;
+    if (state === "connected" || state === "completed") startCallTimer();
+    else if (state === "disconnected") setCallStatus("Reconnexion…");
+    else if (state === "failed") { toast("Connexion impossible. Un serveur TURN est nécessaire entre réseaux différents (voir README).", 6000); hangUp(); }
+  };
+  pc.onconnectionstatechange = () => handle(pc.connectionState);
+  pc.oniceconnectionstatechange = () => { if (!("connectionState" in pc)) handle(pc.iceConnectionState); };
+}
+function attachRemote(pc, video) {
+  const stream = new MediaStream();
+  pc.ontrack = e => {
+    stream.addTrack(e.track);
+    const el = video ? $("remoteVideo") : $("remoteAudio");
+    if (el.srcObject !== stream) el.srcObject = stream;
+    el.play().catch(() => {});
+  };
+}
+function showCallUI(name, seed, video, group) {
+  $("callScreen").classList.remove("hidden");
+  $("callScreen").classList.toggle("video", !!video && !group);
+  $("callPeerName").textContent = name;
+  $("callAvatar").innerHTML = avatar(name, seed, 112);
+  $("callAvatar").classList.toggle("hidden", !!video || !!group);
+  $("remoteVideo").classList.toggle("hidden", !video || !!group);
+  $("localVideo").classList.toggle("hidden", !video || !!group);
+  $("callGrid").classList.toggle("hidden", !group);
+  $("camBtn").classList.toggle("hidden", !video);
+  $("muteBtn").classList.remove("off"); $("muteBtn").textContent = "🎙️";
+  $("camBtn").classList.remove("off");
+  if (video && !group && C.local) { $("localVideo").srcObject = C.local; $("localVideo").play().catch(() => {}); }
+}
+function setCallStatus(t) { $("callStatus").textContent = t; }
+function startCallTimer() {
+  if (C.timer) return;
+  C.connectedAt = Date.now(); stopTone(); clearTimeout(C.ringTimeout);
+  setCallStatus("0:00");
+  C.timer = setInterval(() => setCallStatus(fmtDuration((Date.now() - C.connectedAt) / 1000)), 1000);
+}
+$("muteBtn").addEventListener("click", () => {
+  if (!C.local) return;
+  const tr = C.local.getAudioTracks(), wasOn = tr.some(t => t.enabled);
+  tr.forEach(t => t.enabled = !wasOn);
+  $("muteBtn").classList.toggle("off", wasOn); $("muteBtn").textContent = wasOn ? "🔇" : "🎙️";
+});
+$("camBtn").addEventListener("click", () => {
+  if (!C.local) return;
+  const tr = C.local.getVideoTracks(), wasOn = tr.some(t => t.enabled);
+  tr.forEach(t => t.enabled = !wasOn);
+  $("camBtn").classList.toggle("off", wasOn);
+  if (C.isGroup) renderGroupGrid();
+});
+$("endCallBtn").addEventListener("click", () => hangUp());
+
+// ---------- 1-à-1 : appeler ----------
+async function startCall(uid, video) {
+  if (!uid) return;
+  if (C.active) { toast("Un appel est déjà en cours"); return; }
+  if (isBlockedPair(me(), uid)) { toast("Impossible d'appeler un contact bloqué."); return; }
+  resetCall(); C.active = true; C.role = "caller"; C.peerUid = uid;
+  const media = await acquireMedia(video);
+  if (!media || !C.active) { if (media) media.stream.getTracks().forEach(t => t.stop()); resetCall(); return; }
+  C.local = media.stream; C.video = video = media.video;
+  const name = userName(uid);
+  showCallUI(name, uid, video, false); setCallStatus("Appel…"); startTone("back");
+
+  const ref = db.collection("calls").doc(); C.id = ref.id;
+  const pc = new RTCPeerConnection(RTC_CONFIG); C.pc = pc;
+  C.local.getTracks().forEach(t => pc.addTrack(t, C.local));
+  attachRemote(pc, video); watchPcState(pc);
+  pc.onicecandidate = e => {
+    if (!e.candidate) return;
+    const c = e.candidate.toJSON();
+    if (C.docReady && C.id === ref.id) ref.collection("offerCandidates").add(c).catch(() => {});
+    else C.localQ.push(c);
+  };
+  try {
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await ref.set({
+      isGroup: false, callerId: me(), callerName: myName(), calleeId: uid, calleeName: name, video,
+      status: "ringing", participants: [me(), uid], startedAt: FV.serverTimestamp(),
+      offer: { type: offer.type, sdp: offer.sdp }
+    });
+  } catch (err) { console.error(err); toast("Appel impossible (" + (err.code || "réseau") + ")"); cleanupCall(); return; }
+  if (C.id !== ref.id) return; // raccroché entre-temps
+  C.docReady = true;
+  C.localQ.splice(0).forEach(c => ref.collection("offerCandidates").add(c).catch(() => {}));
+  C.unsubs.push(ref.onSnapshot(s => {
+    const d = s.data(); if (!d || C.id !== ref.id) return;
+    if (d.answer && !pc.currentRemoteDescription) {
+      pc.setRemoteDescription(d.answer).then(() => flushRemote(pc)).catch(console.error);
+      stopTone(); clearTimeout(C.ringTimeout); setCallStatus("Connexion…");
+    }
+    if (d.status === "declined") { toast("Appel refusé"); cleanupCall(); }
+    else if (d.status === "busy") { toast(firstName(name) + " est déjà en appel"); cleanupCall(); }
+    else if (d.status === "ended" || d.status === "missed") cleanupCall();
+  }));
+  C.unsubs.push(ref.collection("answerCandidates").onSnapshot(s => s.docChanges().forEach(ch => { if (ch.type === "added") addRemoteCand(pc, ch.doc.data()); })));
+  C.ringTimeout = setTimeout(() => {
+    if (C.id === ref.id && !pc.currentRemoteDescription) { ref.update({ status: "missed", endedAt: FV.serverTimestamp() }).catch(() => {}); toast("Pas de réponse"); cleanupCall(); }
+  }, 45000);
+}
+
+// ---------- 1-à-1 : recevoir ----------
+function onIncomingCall(id, d) {
+  const ref = db.collection("calls").doc(id);
+  if (Date.now() - tsMillis(d.startedAt) > 60000) { ref.update({ status: "missed" }).catch(() => {}); return; }
+  if (C.active || incoming) { ref.update({ status: "busy" }).catch(() => {}); return; }
+  if (isBlockedPair(me(), d.callerId)) { ref.update({ status: "declined" }).catch(() => {}); return; }
+  watchUser(d.callerId);
+  incoming = { id, data: d, isGroup: false };
+  showIncomingUI(userName(d.callerId, d.callerName), d.callerId, d.video ? "Appel vidéo KUMA" : "Appel vocal KUMA");
+}
+function showIncomingGroupCall(id, d) {
+  incoming = { id, data: d, isGroup: true };
+  showIncomingUI(d.chatName || "Groupe", d.chatId, (d.video ? "Appel vidéo" : "Appel vocal") + " de groupe · " + firstName(userName(d.callerId, d.callerName)));
+  setTimeout(() => { if (incoming && incoming.id === id) { dismissedGroupCalls.add(id); hideIncoming(); } }, 30000);
+}
+function showIncomingUI(name, seed, kind) {
+  $("incomingKind").textContent = kind;
+  $("incomingName").textContent = name;
+  $("incomingAvatar").innerHTML = avatar(name, seed, 110);
+  $("incomingScreen").classList.remove("hidden");
+  startTone("ring");
+  notify(name, kind, "call");
+}
+function hideIncoming() { $("incomingScreen").classList.add("hidden"); stopTone(); incoming = null; }
+$("acceptBtn").addEventListener("click", () => {
+  const inc = incoming; hideIncoming(); if (!inc) return;
+  if (inc.isGroup) joinGroupCall(inc.data.chatId, !!inc.data.video); else answerCall(inc.id);
+});
+$("declineBtn").addEventListener("click", () => {
+  const inc = incoming; hideIncoming(); if (!inc) return;
+  if (inc.isGroup) dismissedGroupCalls.add(inc.id);
+  else db.collection("calls").doc(inc.id).update({ status: "declined", endedAt: FV.serverTimestamp() }).catch(() => {});
+});
+
+async function answerCall(id) {
+  if (C.active) return;
+  const ref = db.collection("calls").doc(id);
+  let d = null;
+  try { d = (await ref.get()).data(); } catch (e) {}
+  if (!d || d.status !== "ringing") { toast("L'appel est terminé"); return; }
+  resetCall(); C.active = true; C.role = "callee"; C.id = id; C.peerUid = d.callerId;
+  const media = await acquireMedia(!!d.video);
+  if (!media || C.id !== id) { if (media) media.stream.getTracks().forEach(t => t.stop()); ref.update({ status: "declined" }).catch(() => {}); resetCall(); return; }
+  C.local = media.stream; C.video = !!d.video;
+  const name = userName(d.callerId, d.callerName);
+  showCallUI(name, d.callerId, C.video, false); setCallStatus("Connexion…");
+  const pc = new RTCPeerConnection(RTC_CONFIG); C.pc = pc;
+  C.local.getTracks().forEach(t => pc.addTrack(t, C.local));
+  attachRemote(pc, C.video); watchPcState(pc);
+  pc.onicecandidate = e => { if (e.candidate) ref.collection("answerCandidates").add(e.candidate.toJSON()).catch(() => {}); };
+  C.unsubs.push(ref.collection("offerCandidates").onSnapshot(s => s.docChanges().forEach(ch => { if (ch.type === "added") addRemoteCand(pc, ch.doc.data()); })));
+  try {
+    await pc.setRemoteDescription(d.offer); flushRemote(pc);
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    await ref.update({ status: "active", answeredAt: FV.serverTimestamp(), answer: { type: answer.type, sdp: answer.sdp } });
+  } catch (err) { console.error(err); toast("Impossible de répondre (" + (err.code || err.name || "erreur") + ")"); hangUp(); return; }
+  C.unsubs.push(ref.onSnapshot(s => { const x = s.data(); if (x && C.id === id && (x.status === "ended" || x.status === "missed")) cleanupCall(); }));
+}
+
+function hangUp() {
+  if (!C.active) return;
+  if (C.isGroup) { leaveGroupCall(); return; }
+  if (C.id) {
+    const upd = C.connectedAt
+      ? { status: "ended", endedAt: FV.serverTimestamp(), duration: Math.round((Date.now() - C.connectedAt) / 1000) }
+      : { status: C.role === "caller" ? "missed" : "ended", endedAt: FV.serverTimestamp() };
+    db.collection("calls").doc(C.id).update(upd).catch(() => {});
+  }
+  cleanupCall();
+}
+function cleanupCall() {
+  stopTone(); clearTimeout(C.ringTimeout); clearInterval(C.timer);
+  (C.unsubs || []).forEach(u => { try { u(); } catch (e) {} });
+  if (C.pc) { try { C.pc.close(); } catch (e) {} }
+  if (C.local) C.local.getTracks().forEach(t => t.stop());
+  ["remoteVideo", "localVideo", "remoteAudio"].forEach(id => { $(id).srcObject = null; });
+  $("callScreen").classList.add("hidden"); $("callGrid").innerHTML = "";
+  resetCall();
+  renderGroupCallBanner();
+}
+
+// ---------- Appels de groupe ----------
+async function joinGroupCall(chatId, video) {
+  if (C.active) { toast("Un appel est déjà en cours"); return; }
+  const chat = allChats.find(c => c.id === chatId);
+  if (!chat) { toast("Groupe introuvable"); return; }
+  resetCall(); C.active = true; C.isGroup = true; C.chatId = chatId; C.chatName = chat.name || "Groupe";
+  const media = await acquireMedia(video);
+  if (!media || !C.active) { if (media) media.stream.getTracks().forEach(t => t.stop()); resetCall(); return; }
+  C.local = media.stream; C.video = media.video;
+  showCallUI(C.chatName, chatId, C.video, true); setCallStatus("Connexion à l'appel de groupe…");
+  G.conns = {}; G.streams = {}; G.names = {}; G.unsubs = [];
+  G.nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  renderGroupGrid();
+  try {
+    let callId = activeGroupCalls[chatId] && activeGroupCalls[chatId].id;
+    if (!callId) {
+      const q = await db.collection("calls").where("chatMembers", "array-contains", me()).where("chatId", "==", chatId).where("status", "==", "active").limit(1).get();
+      if (!q.empty) callId = q.docs[0].id;
+    }
+    let ref;
+    if (callId) { ref = db.collection("calls").doc(callId); await ref.update({ participants: FV.arrayUnion(me()) }); }
+    else {
+      ref = db.collection("calls").doc();
+      await ref.set({ isGroup: true, chatId, chatName: C.chatName, chatMembers: chat.members, video: C.video, status: "active",
+        callerId: me(), callerName: myName(), participants: [me()], startedAt: FV.serverTimestamp() });
+    }
+    if (!C.active) return;
+    C.id = ref.id;
+    const peers = ref.collection("peers");
+    await peers.doc(me()).set({ name: myName(), nonce: G.nonce, joinedAt: FV.serverTimestamp(), beat: FV.serverTimestamp() });
+    G.beat = setInterval(() => peers.doc(me()).update({ beat: FV.serverTimestamp() }).catch(() => {}), 20000);
+    // Offres qui me sont destinées (session actuelle uniquement grâce au « nonce »)
+    G.unsubs.push(ref.collection("signals").where("toNonce", "==", G.nonce).onSnapshot(s => s.docChanges().forEach(ch => {
+      if (ch.type === "added") onGroupOffer(ch.doc);
+    })));
+    let first = true;
+    G.unsubs.push(peers.onSnapshot(s => {
+      s.docChanges().forEach(ch => {
+        const uid = ch.doc.id; if (uid === me()) return;
+        const p = ch.doc.data({ serverTimestamps: "estimate" });
+        if (ch.type === "removed") { closeGroupPeer(uid); return; }
+        G.names[uid] = p.name || userName(uid);
+        // Je viens d'arriver : c'est moi qui appelle chaque participant déjà présent
+        if (first && ch.type === "added" && Date.now() - tsMillis(p.beat || p.joinedAt) < 90000) offerToPeer(ref, uid, p.nonce);
+      });
+      first = false; renderGroupGrid();
+    }));
+    startCallTimer();
+  } catch (err) { console.error(err); toast("Impossible de rejoindre l'appel (" + (err.code || "réseau") + ")"); leaveGroupCall(); }
+}
+function makeGroupPc(uid, initiator) {
+  closeGroupPeer(uid);
+  const pc = new RTCPeerConnection(RTC_CONFIG);
+  pc._initiator = initiator; pc._q = [];
+  G.conns[uid] = pc;
+  C.local.getTracks().forEach(t => pc.addTrack(t, C.local));
+  const stream = new MediaStream(); G.streams[uid] = stream;
+  pc.ontrack = e => { stream.addTrack(e.track); renderGroupGrid(); };
+  pc.onconnectionstatechange = () => { if (pc.connectionState === "failed" && G.conns[uid] === pc) toast("Connexion impossible avec " + (G.names[uid] || "un participant") + " (serveur TURN ?)", 5000); };
+  renderGroupGrid();
+  return pc;
+}
+async function offerToPeer(ref, uid, theirNonce) {
+  if (!theirNonce) return;
+  const pc = makeGroupPc(uid, true);
+  const sig = ref.collection("signals").doc(`${me()}_${uid}_${G.nonce}`);
+  pc.onicecandidate = e => { if (e.candidate) sig.collection("offerCandidates").add(e.candidate.toJSON()).catch(() => {}); };
+  try {
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await sig.set({ from: me(), to: uid, toNonce: theirNonce, fromNonce: G.nonce, offer: { type: offer.type, sdp: offer.sdp }, createdAt: FV.serverTimestamp() });
+  } catch (err) { console.error(err); return; }
+  G.unsubs.push(sig.onSnapshot(s => {
+    const d = s.data();
+    if (d && d.answer && G.conns[uid] === pc && !pc.currentRemoteDescription) pc.setRemoteDescription(d.answer).then(() => flushRemote(pc)).catch(console.error);
+  }));
+  G.unsubs.push(sig.collection("answerCandidates").onSnapshot(s => s.docChanges().forEach(ch => {
+    if (ch.type === "added" && G.conns[uid] === pc) addRemoteCand(pc, ch.doc.data());
+  })));
+}
+async function onGroupOffer(doc) {
+  const d = doc.data(); if (!d || !d.offer || !C.isGroup) return;
+  const uid = d.from;
+  const existing = G.conns[uid];
+  // Deux offres croisées : le plus petit identifiant garde la sienne
+  if (existing && existing._initiator && !existing.currentRemoteDescription && me() < uid) return;
+  const pc = makeGroupPc(uid, false);
+  G.names[uid] = G.names[uid] || userName(uid);
+  pc.onicecandidate = e => { if (e.candidate) doc.ref.collection("answerCandidates").add(e.candidate.toJSON()).catch(() => {}); };
+  G.unsubs.push(doc.ref.collection("offerCandidates").onSnapshot(s => s.docChanges().forEach(ch => {
+    if (ch.type === "added" && G.conns[uid] === pc) addRemoteCand(pc, ch.doc.data());
+  })));
+  try {
+    await pc.setRemoteDescription(d.offer); flushRemote(pc);
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    await doc.ref.update({ answer: { type: answer.type, sdp: answer.sdp } });
+  } catch (err) { console.error(err); }
+}
+function closeGroupPeer(uid) {
+  const pc = G.conns[uid];
+  if (pc) { try { pc.close(); } catch (e) {} delete G.conns[uid]; }
+  delete G.streams[uid];
+  const tile = $("callGrid").querySelector(`[data-uid="${CSS.escape(uid)}"]`);
+  if (tile) tile.remove();
+}
+function renderGroupGrid() {
+  if (!C.isGroup) return;
+  const grid = $("callGrid");
+  const uids = ["__me", ...Object.keys(G.conns)];
+  Array.from(grid.children).forEach(el => { if (!uids.includes(el.dataset.uid)) el.remove(); });
+  uids.forEach(uid => {
+    const isMe = uid === "__me";
+    const name = isMe ? "Vous" : (G.names[uid] || userName(uid));
+    const stream = isMe ? C.local : G.streams[uid];
+    let tile = grid.querySelector(`[data-uid="${CSS.escape(uid)}"]`);
+    if (!tile) {
+      tile = document.createElement("div");
+      tile.className = "call-tile"; tile.dataset.uid = uid;
+      tile.innerHTML = `${avatar(name, isMe ? me() : uid, 64)}<video autoplay playsinline ${isMe ? "muted" : ""}></video><span class="label">${esc(name)}</span>`;
+      grid.appendChild(tile);
+    }
+    const v = tile.querySelector("video");
+    if (stream && v.srcObject !== stream) { v.srcObject = stream; v.play().catch(() => {}); }
+    const hasVideo = !!(stream && stream.getVideoTracks().some(t => t.enabled && t.readyState === "live"));
+    v.style.visibility = hasVideo ? "visible" : "hidden";
+    if (isMe) v.style.transform = "scaleX(-1)";
+  });
+  $("callPeerName").textContent = `${C.chatName} · ${uids.length} participant${uids.length > 1 ? "s" : ""}`;
+}
+async function leaveGroupCall() {
+  const id = C.id;
+  clearInterval(G.beat); G.beat = null;
+  G.unsubs.forEach(u => { try { u(); } catch (e) {} }); G.unsubs = [];
+  Object.keys(G.conns).forEach(closeGroupPeer);
+  G.conns = {}; G.streams = {}; G.names = {};
+  cleanupCall();
+  if (!id) return;
+  const ref = db.collection("calls").doc(id);
+  try {
+    await ref.collection("peers").doc(me()).delete();
+    const rest = await ref.collection("peers").get();
+    const alive = rest.docs.filter(d => Date.now() - tsMillis(d.data({ serverTimestamps: "estimate" }).beat) < 90000);
+    if (!alive.length) await ref.update({ status: "ended", endedAt: FV.serverTimestamp() });
+  } catch (e) { console.error(e); }
+}
+window.addEventListener("pagehide", () => { if (C.active) hangUp(); });
+</script>
+
+<script>
+// ============================================================
+// 8. DÉMARRAGE — branché en dernier, quand tout le code est chargé
+// ============================================================
+auth.onAuthStateChanged(user => {
+  if (user) {
+    currentUser = user;
+    $("authScreen").classList.add("hidden");
+    $("mainApp").classList.remove("hidden");
+    watchUser(user.uid);
+    setPresence(true);
+    initChatsList();
+    initStatusTab();
+    initCallsTab();
+  } else {
+    endSession();
+    currentUser = null;
+    $("mainApp").classList.add("hidden");
+    $("authScreen").classList.remove("hidden");
+    $("step-code").classList.add("hidden");
+    $("step-phone").classList.remove("hidden");
+    resetRecaptcha();
+    document.title = "KUMA";
+  }
+});
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js").catch(console.error));
+}
+</script>
+</body>
+</html>
